@@ -1,0 +1,24 @@
+# CodeIgniter writable folders and caches
+/writable/*
+!/writable/.gitkeep
+
+# Composer vendor — don't push heavy dependencies
+/vendor/
+/node_modules/
+/bower_components/
+
+# Environment
+.env
+.env.*.local
+
+# system files
+.DS_Store
+Thumbs.db
+
+# IDE/editor
+/.idea/
+/.vscode/
+
+# OS
+*.log
+*.cache
