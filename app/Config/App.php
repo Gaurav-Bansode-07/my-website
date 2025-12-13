@@ -181,7 +181,8 @@ public string $baseURL = '';
      *
      * @var array<string, string>
      */
-    public array $proxyIPs = [];
+   public array $proxyIPs = ['*'];
+
 
     /**
      * --------------------------------------------------------------------------
