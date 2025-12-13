@@ -18,7 +18,7 @@ class App extends BaseConfig
      */
     // public string $baseURL = 'http://localhost/mywebsite/public/';
 	// public string $baseURL = 'http://localhost:8080/';
-public string $baseURL = '/';
+public string $baseURL = '';
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
      * If you want to accept multiple Hostnames, set this.
