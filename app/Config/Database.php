@@ -50,31 +50,42 @@ class Database extends Config
             // 'time'     => 'H:i:s',
         // ],
     // ];
-	public $default = [
-    'DSN'      => '',
-    'hostname' => env('DB_HOST'),
-    'username' => env('DB_USERNAME'),
-    'password' => env('DB_PASSWORD'),
-    'database' => env('DB_DATABASE'),
-    'DBDriver' => 'MySQLi',
-    'DBPrefix' => '',
-    'pConnect' => false,
-    'DBDebug'  => true,
-    'charset'  => 'utf8mb4',
-    'DBCollat' => 'utf8mb4_general_ci',
-    'swapPre'  => '',
-    'encrypt'  => true,
-    'compress' => false,
-    'strictOn' => false,
-    'failover' => [],
-    'port'     => env('DB_PORT'),
+	
+	public array $default = [];
 
-    // 🔥 THIS IS THE MISSING PART 🔥
-   'options' => [
-    MYSQLI_OPT_SSL_VERIFY_SERVER_CERT => false,
-],
+	public function __construct()
+{
+    parent::__construct();
 
-];
+    $this->default = [
+        'DSN'      => '',
+        'hostname' => env('DB_HOST'),
+        'username' => env('DB_USERNAME'),
+        'password' => env('DB_PASSWORD'),
+        'database' => env('DB_DATABASE'),
+        'DBDriver' => 'MySQLi',
+        'DBPrefix' => '',
+        'pConnect' => false,
+        'DBDebug'  => true,
+        'charset'  => 'utf8mb4',
+        'DBCollat' => 'utf8mb4_general_ci',
+        'swapPre'  => '',
+        'encrypt'  => true,
+        'compress' => false,
+        'strictOn' => false,
+        'failover' => [],
+        'port'     => env('DB_PORT'),
+        'options'  => [
+            MYSQLI_OPT_SSL_VERIFY_SERVER_CERT => false,
+        ],
+    ];
+
+    // Keep CI test safety
+    if (ENVIRONMENT === 'testing') {
+        $this->defaultGroup = 'tests';
+    }
+}
+
 
 
     //    /**
