@@ -10,4 +10,7 @@
 /writable/uploads/*
 !/writable/uploads/.gitkeep
 
+/vendor/
+
 .env
+
