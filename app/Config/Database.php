@@ -50,7 +50,7 @@ class Database extends Config
             'compress' => false,
             'strictOn' => false,
             'failover' => [],
-            'port'     => env('DB_PORT'),
+            'port' => (int) env('DB_PORT'),
             'options'  => [
                 MYSQLI_OPT_SSL_VERIFY_SERVER_CERT => false,
             ],
