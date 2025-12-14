@@ -24,32 +24,58 @@ class Database extends Config
      *
      * @var array<string, mixed>
      */
-    public array $default = [
-        'DSN'          => '',
-        'hostname'     => 'localhost',
-        'username'     => '',
-        'password'     => '',
-        'database'     => '',
-        'DBDriver'     => 'MySQLi',
-        'DBPrefix'     => '',
-        'pConnect'     => false,
-        'DBDebug'      => true,
-        'charset'      => 'utf8mb4',
-        'DBCollat'     => 'utf8mb4_general_ci',
-        'swapPre'      => '',
-        'encrypt'      => false,
-        'compress'     => false,
-        'strictOn'     => false,
-        'failover'     => [],
-        'port'         => 3306,
-        'numberNative' => false,
-        'foundRows'    => false,
-        'dateFormat'   => [
-            'date'     => 'Y-m-d',
-            'datetime' => 'Y-m-d H:i:s',
-            'time'     => 'H:i:s',
-        ],
-    ];
+    // public array $default = [
+        // 'DSN'          => '',
+        // 'hostname'     => 'localhost',
+        // 'username'     => '',
+        // 'password'     => '',
+        // 'database'     => '',
+        // 'DBDriver'     => 'MySQLi',
+        // 'DBPrefix'     => '',
+        // 'pConnect'     => false,
+        // 'DBDebug'      => true,
+        // 'charset'      => 'utf8mb4',
+        // 'DBCollat'     => 'utf8mb4_general_ci',
+        // 'swapPre'      => '',
+        // 'encrypt'      => false,
+        // 'compress'     => false,
+        // 'strictOn'     => false,
+        // 'failover'     => [],
+        // 'port'         => 3306,
+        // 'numberNative' => false,
+        // 'foundRows'    => false,
+        // 'dateFormat'   => [
+            // 'date'     => 'Y-m-d',
+            // 'datetime' => 'Y-m-d H:i:s',
+            // 'time'     => 'H:i:s',
+        // ],
+    // ];
+	public $default = [
+    'DSN'      => '',
+    'hostname' => env('DB_HOST'),
+    'username' => env('DB_USERNAME'),
+    'password' => env('DB_PASSWORD'),
+    'database' => env('DB_DATABASE'),
+    'DBDriver' => 'MySQLi',
+    'DBPrefix' => '',
+    'pConnect' => false,
+    'DBDebug'  => true,
+    'charset'  => 'utf8mb4',
+    'DBCollat' => 'utf8mb4_general_ci',
+    'swapPre'  => '',
+    'encrypt'  => true,
+    'compress' => false,
+    'strictOn' => false,
+    'failover' => [],
+    'port'     => env('DB_PORT'),
+
+    // 🔥 THIS IS THE MISSING PART 🔥
+   'options' => [
+    MYSQLI_OPT_SSL_VERIFY_SERVER_CERT => false,
+],
+
+];
+
 
     //    /**
     //     * Sample database connection for SQLite3.
