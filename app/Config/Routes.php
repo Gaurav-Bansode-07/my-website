@@ -7,3 +7,7 @@ $routes->group('auth', [
 ], static function ($routes) {
     $routes->get('/', 'AuthController::index');
 });
+
+$routes->get('dbtest', 'DbTest::index');
+
+
