@@ -59,4 +59,10 @@ class View extends BaseView
      * @var list<class-string<ViewDecoratorInterface>>
      */
     public array $decorators = [];
+	
+	public array $namespacePaths = [
+        'Home' => APPPATH . 'Modules/Home/Views',
+        'Blog' => APPPATH . 'Modules/Blog/Views',
+    ];
+	
 }
