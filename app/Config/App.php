@@ -17,7 +17,9 @@ class App extends BaseConfig
      * E.g., http://example.com/
      */
     // public string $baseURL = 'http://localhost/mywebsite/public/';
-public string $baseURL = 'http://localhost/mywebsite/public/';
+public string $baseURL = 'https://principacore.com/';
+
+public bool $maintenance = false;
 
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
