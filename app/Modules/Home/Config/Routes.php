@@ -11,7 +11,3 @@ $routes->get('/', 'HomeController::index', [
 $routes->get('home', 'HomeController::index', [
     'namespace' => 'App\Modules\Home\Controllers',
 ]);
-
-$routes->get('blog/(:segment)', 'BlogController::show/$1', [
-    'namespace' => 'App\Modules\Blog\Controllers',
-]);

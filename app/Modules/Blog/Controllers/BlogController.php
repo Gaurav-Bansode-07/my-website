@@ -22,4 +22,16 @@ class BlogController extends BaseController
             'post' => $post,
         ]);
     }
+	
+	public function index()
+{
+    $model = new BlogModel();
+
+    $posts = $model->getPublishedPosts(); // or your canonical method
+
+    return view('App\Modules\Blog\Views\index', [
+        'posts' => $posts,
+    ]);
+}
+
 }
