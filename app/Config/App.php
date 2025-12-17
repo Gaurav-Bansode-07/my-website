@@ -17,7 +17,20 @@ class App extends BaseConfig
      * E.g., http://example.com/
      */
     // public string $baseURL = 'http://localhost/mywebsite/public/';
+	
 public string $baseURL = '';
+
+public function __construct()
+{
+    $envBaseURL = getenv('APP_BASEURL');
+
+    if ($envBaseURL) {
+        $this->baseURL = rtrim($envBaseURL, '/') . '/';
+    }
+}
+
+	
+//public string $baseURL = '';
 
 public bool $maintenance = false;
 
