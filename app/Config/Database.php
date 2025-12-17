@@ -29,7 +29,7 @@ class Database extends Config
         'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
         'pConnect' => false,
-        'DBDebug'  => false, // ⚠️ production
+        'DBDebug'  => true, // ⚠️ production
         'charset'  => 'utf8mb4',
         'DBCollat' => 'utf8mb4_general_ci',
         'swapPre'  => '',
