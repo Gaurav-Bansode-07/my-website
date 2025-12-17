@@ -1,4 +1,4 @@
-<?php // dd($posts); ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -129,10 +129,13 @@
             background-position: center;
         }
 
-        .card-video video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .card-video {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+            background: #1e293b; /* Dark slate for video placeholder */
         }
 
         .card-content {
@@ -193,6 +196,9 @@
             main { grid-column: 1 / 2; }
             aside { grid-column: 2 / 3; }
         }
+        
+        /* Remove default link underline */
+        a { text-decoration: none; color: inherit; }
     </style>
 </head>
 <body>
@@ -217,26 +223,86 @@
         <p>Research-driven articles across finance, tools, and business.</p>
     </section>
 
-    <!-- 🔥 VIDEOS ROW -->
-    <h2 class="section-title">Featured Videos</h2>
-    <div class="blog-grid">
-        <?php for ($i = 1; $i <= 5; $i++): ?>
-            <article class="card">
-                <div class="card-video">
-                    <video controls muted playsinline preload="metadata">
-                        <source src="<?= base_url('uploads/videos/sample.mp4') ?>" type="video/mp4">
-                    </video>
-                </div>
-                <div class="card-content">
-                    <span class="badge">Video</span>
-                    <h2>PrincipaCore Overview <?= $i ?></h2>
-                    <div class="card-footer">2 min watch</div>
-                </div>
-            </article>
-        <?php endfor; ?>
-    </div>
+    <?php if (! empty($videos)): ?>
+<h2 class="section-title">Latest Videos</h2>
 
-    <!-- 📰 BLOG POSTS -->
+<div class="blog-grid">
+    <?php foreach ($videos as $video): ?>
+
+        <?php
+            // Default fallback image
+            $videoImage = base_url('uploads/blog/general-1.jpg');
+
+            if (! empty($video['hero_image_url'])) {
+
+                // Absolute URL (YouTube / CDN)
+                if (preg_match('#^https?://#', $video['hero_image_url'])) {
+                    $videoImage = esc($video['hero_image_url'], 'attr');
+                }
+                // Local relative path
+                else {
+                    $cleanPath = ltrim($video['hero_image_url'], '/');
+                    $videoImage = base_url($cleanPath);
+                }
+            }
+
+            // External video link (YouTube / Instagram)
+            $videoUrl = esc($video['external_url'], 'attr');
+        ?>
+
+        <a href="<?= $videoUrl ?>"
+           target="_blank"
+           rel="noopener noreferrer">
+
+            <article class="card">
+
+                <!-- VIDEO THUMBNAIL -->
+                <div class="card-image"
+                     style="background-image:url('<?= $videoImage ?>'); position:relative;">
+
+                    <div style="
+                        position:absolute;
+                        inset:0;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-size:48px;
+                        color:white;
+                        background:rgba(0,0,0,0.35);
+                    ">
+                        ▶
+                    </div>
+
+                </div>
+
+                <div class="card-content">
+                    <span class="badge" style="background:#fef2f2; color:#dc2626;">
+                        Video
+                    </span>
+
+                    <h2><?= esc($video['title']) ?></h2>
+
+                    <?php if (! empty($video['summary'])): ?>
+                        <p style="color:var(--text-muted); font-size:15px; line-height:1.5;">
+                            <?= esc($video['summary']) ?>
+                        </p>
+                    <?php endif; ?>
+
+                    <div class="card-footer">
+                        Watch Now →
+                    </div>
+                </div>
+
+            </article>
+        </a>
+
+    <?php endforeach; ?>
+</div>
+
+<?php endif; ?>
+
+
+
     <h2 class="section-title">Latest Articles</h2>
     <div class="blog-grid">
         <?php foreach ($posts as $post): ?>
@@ -246,7 +312,7 @@
                     <div class="card-content">
                         <span class="badge"><?= esc($post['category'] ?? 'General') ?></span>
                         <h2><?= esc($post['title']) ?></h2>
-                        <p><?= esc($post['summary'] ?? '') ?></p>
+                        <p style="color:var(--text-muted); font-size:15px; line-height:1.5;"><?= esc($post['summary'] ?? '') ?></p>
                         <div class="card-footer">
                             <?= esc(date('M d, Y', strtotime($post['published_at'] ?? 'now'))) ?>
                         </div>

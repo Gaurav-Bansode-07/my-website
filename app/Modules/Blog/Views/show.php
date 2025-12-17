@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title><?= esc($post['meta_title'] ?? $post['title']) ?> | PrincipaCore</title>
-
     <meta name="description" content="<?= esc($post['meta_description'] ?? $post['summary']) ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -13,8 +12,8 @@
         body {
             font-family: Inter, sans-serif;
             background: #f8fafc;
-            color: #0f172a;
             margin: 0;
+            color: #0f172a;
         }
         .container {
             max-width: 900px;
@@ -51,9 +50,7 @@
 <div class="container">
 
     <?php if (! empty($post['hero_image_url'])): ?>
-        <div class="hero"
-             style="background-image:url('<?= esc($post['hero_image_url']) ?>')">
-        </div>
+        <div class="hero" style="background-image:url('<?= esc($post['hero_image_url']) ?>')"></div>
     <?php endif; ?>
 
     <h1><?= esc($post['title']) ?></h1>

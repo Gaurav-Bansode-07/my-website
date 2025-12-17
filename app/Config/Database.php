@@ -38,9 +38,11 @@ class Database extends Config
         'strictOn' => false,
         'failover' => [],
         'port'     => 25060,
-        'options'  => [
-            MYSQLI_OPT_SSL_VERIFY_SERVER_CERT => false,
-        ],
+        'options' => [
+    MYSQLI_OPT_SSL_VERIFY_SERVER_CERT => false,
+    MYSQLI_OPT_SSL_CA => '/etc/ssl/certs/ca-certificates.crt',
+],
+
     ];
 
     /**

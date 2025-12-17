@@ -8,30 +8,14 @@ use App\Modules\Video\Models\VideoModel;
 
 class HomeController extends BaseController
 {
-	
     public function index()
     {
-		
-        $blogModel = new BlogModel();
-
-        $posts = $blogModel->getHomepagePosts(1); // 👈 force ONE post
-
-        // 🔍 DEBUG – TEMPORARY
-        // dd($posts);
+        $blogModel  = new BlogModel();
+        $videoModel = new VideoModel();
 
         return view('App\Modules\Home\Views\home', [
-            'posts' => $posts,
+            'posts'  => $blogModel->getPublishedPosts(),
+            'videos' => $videoModel->getLatestVideos(6),
         ]);
-		
-		
-		$videoModel = new VideoModel();
-		$latestVideos = $videoModel->getLatestVideos(10);
-
-		return view('Home/home', [
-			'posts'        => $posts,          // existing blog posts
-			'latestVideos' => $latestVideos,   // new
-		]);
-
-		
     }
 }
