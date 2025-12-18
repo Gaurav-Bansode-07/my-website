@@ -29,21 +29,23 @@ class BlogModel extends Model
      * Homepage / blog listing
      */
     public function getPublishedPosts(): array
-    {
-        return $this->where('is_published', 1)
-                    ->where('published_at <=', date('Y-m-d H:i:s'))
-                    ->orderBy('published_at', 'DESC')
-                    ->findAll();
-    }
+{
+    return $this->where('is_published', 1)
+                ->where('published_at <=', 'NOW()', false)
+                ->orderBy('published_at', 'DESC')
+                ->findAll();
+}
+
 
     /**
      * Single post by slug
      */
-    public function getPostBySlug(string $slug): ?array
-    {
-        return $this->where('slug', $slug)
-                    ->where('is_published', 1)
-                    ->where('published_at <=', date('Y-m-d H:i:s'))
-                    ->first();
-    }
+   public function getPostBySlug(string $slug): ?array
+{
+    return $this->where('slug', $slug)
+                ->where('is_published', 1)
+                ->where('published_at <=', 'NOW()', false)
+                ->first();
+}
+
 }
