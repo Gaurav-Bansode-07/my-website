@@ -10,34 +10,17 @@
 
 <style>
 
-/* === SCROLL STABILITY FIX (NO SHIFT) === */
-html{
-    scrollbar-gutter: stable;
-}
-
-html, body{
-    overflow-y: auto;
-}
-
 /* =========================
-   MOBILE-FIRST FOUNDATION
+   RESET & GLOBAL
 ========================= */
-:root{
-    --nav-bg:#1a1a1a;
-    --primary:#4f46e5;
-    --accent:#f97316;
-    --bg-body:#ffffff;
-    --bg-alt:#f8fafc;
-    --text-main:#0f172a;
-    --text-muted:#64748b;
-    --border:#e2e8f0;
-    --radius:12px;
-}
-
 *,
 *::before,
 *::after{
     box-sizing:border-box;
+}
+
+html{
+    scrollbar-gutter: stable;
 }
 
 html,body{
@@ -49,9 +32,10 @@ html,body{
 
 body{
     font-family:'Inter',sans-serif;
-    background:var(--bg-body);
-    color:var(--text-main);
+    background:#ffffff;
+    color:#0f172a;
     line-height:1.6;
+    font-size:clamp(14px,1vw,16px);
 }
 
 img{
@@ -65,7 +49,20 @@ a{
 }
 
 /* =========================
-   HEADER
+   VARIABLES
+========================= */
+:root{
+    --nav-bg:#1a1a1a;
+    --primary:#4f46e5;
+    --accent:#f97316;
+    --bg-alt:#f8fafc;
+    --text-muted:#64748b;
+    --border:#e2e8f0;
+    --radius:12px;
+}
+
+/* =========================
+   HEADER (FULL WIDTH BG)
 ========================= */
 header{
     background:var(--nav-bg);
@@ -73,24 +70,27 @@ header{
     position:sticky;
     top:0;
     z-index:1000;
+    width:100%;
 }
 
 .header-inner{
     display:flex;
     flex-direction:column;
     gap:12px;
-    padding:14px 16px 12px;
+    padding:14px 16px;
+    max-width:min(1300px,92vw);
+    margin-inline:auto;
 }
 
 .header-top{
     display:flex;
-    align-items:center;
     justify-content:space-between;
+    align-items:center;
 }
 
 .logo{
-    font-size:20px;
     font-weight:800;
+    font-size:clamp(18px,2vw,22px);
     letter-spacing:.04em;
 }
 
@@ -102,7 +102,9 @@ header{
     font-size:12px;
 }
 
-/* Nav */
+/* =========================
+   NAV
+========================= */
 nav{
     display:flex;
     gap:10px;
@@ -127,14 +129,17 @@ nav a{
 ========================= */
 .social-bar{
     border-bottom:1px solid var(--border);
-    padding:12px 16px;
-    font-size:12px;
+    width:100%;
 }
 
 .social-inner{
     display:flex;
     flex-direction:column;
     gap:8px;
+    font-size:12px;
+    padding:12px 16px;
+    max-width:min(1300px,92vw);
+    margin-inline:auto;
 }
 
 /* =========================
@@ -145,13 +150,21 @@ nav a{
     grid-template-columns:1fr;
     gap:20px;
     padding:20px 16px;
+    max-width:min(1300px,92vw);
+    margin-inline:auto;
 }
 
 .main-story{
     position:relative;
-    height:300px;
+    height:clamp(260px,60vw,380px);
     border-radius:var(--radius);
     overflow:hidden;
+}
+
+.main-story img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
 }
 
 .main-story-content{
@@ -165,9 +178,27 @@ nav a{
     color:#fff;
 }
 
+.main-story-content h1{
+    font-size:clamp(22px,3vw,36px);
+    margin:6px 0;
+}
+
 .hero-stack{
     display:grid;
     gap:12px;
+}
+
+.stack-item{
+    display:flex;
+    gap:12px;
+    align-items:center;
+}
+
+.stack-thumb{
+    width:90px;
+    height:70px;
+    object-fit:cover;
+    border-radius:10px;
 }
 
 /* =========================
@@ -181,23 +212,27 @@ nav a{
     white-space:nowrap;
     font-size:13px;
     font-weight:700;
-    -webkit-overflow-scrolling:touch;
 }
 
 .tags-row::-webkit-scrollbar{ display:none; }
 
 /* =========================
-   MAIN CONTENT
+   MAIN CONTAINER
 ========================= */
 .container{
     display:flex;
     flex-direction:column;
     gap:40px;
     padding:24px 16px;
+    max-width:min(1300px,92vw);
+    margin-inline:auto;
 }
 
+/* =========================
+   TITLES
+========================= */
 .section-title{
-    font-size:22px;
+    font-size:clamp(18px,2.4vw,24px);
     display:flex;
     align-items:center;
     gap:10px;
@@ -218,59 +253,85 @@ nav a{
     gap:16px;
     overflow-x:auto;
     padding-bottom:16px;
-    -webkit-overflow-scrolling:touch;
 }
 
 .video-row a{
-    min-width:240px;
+    min-width:260px;
     flex-shrink:0;
 }
 
 /* =========================
-   FEED
+   FEED GRID
 ========================= */
 .feed-grid{
     display:grid;
     grid-template-columns:1fr;
     gap:24px;
-    width:100%;
 }
-
-.feed-grid > *{ min-width:0; }
 
 .card{
     width:100%;
-    overflow:hidden;
 }
 
 .card-img{
     width:100%;
-    height:180px;
+    height:clamp(160px,30vw,200px);
     object-fit:cover;
     border-radius:var(--radius);
 }
 
+.card h2{
+    font-size:clamp(16px,2vw,20px);
+}
+
 /* =========================
-   FOOTER
+   FOOTER (FULL WIDTH BG)
 ========================= */
 footer{
     background:var(--nav-bg);
     color:#fff;
+    width:100%;
+}
+
+.footer-inner{
+    max-width:min(1300px,92vw);
+    margin-inline:auto;
     padding:40px 16px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    gap:24px;
+}
+
+.newsletter-box{
+    max-width:520px;
+    width:100%;
+}
+
+.newsletter-box h2{
+    font-size:clamp(20px,2.6vw,28px);
+}
+
+.newsletter-box form{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.newsletter-box input{
+    width:100%;
+    padding:14px 16px;
+    border-radius:999px;
+    border:none;
+    outline:none;
+    font-size:14px;
 }
 
 /* =========================
-   DESKTOP
+   DESKTOP (ZOOM SAFE)
 ========================= */
 @media (min-width:768px){
-
-    .header-inner,
-    .hero-grid,
-    .container,
-    .social-inner{
-        max-width:1300px;
-        margin:auto;
-    }
 
     .header-inner{
         flex-direction:row;
@@ -279,7 +340,9 @@ footer{
         padding:16px 24px;
     }
 
-    nav{ overflow:visible; }
+    nav{
+        overflow:visible;
+    }
 
     nav a{
         background:none;
@@ -291,24 +354,45 @@ footer{
         grid-template-columns:2fr 1fr;
     }
 
+    .main-story{
+        height:clamp(320px,40vw,520px);
+    }
+
     .container{
         flex-direction:row;
+        align-items:flex-start;
     }
 
     main{
         flex:1;
-        min-height:0; /* ✅ FIXED */
+        min-width:0;
     }
 
-    aside{ width:350px; }
+    aside{
+        width:min(350px,30vw);
+        flex-shrink:0;
+    }
 
     .feed-grid{
         grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
     }
 
-    .main-story{ height:500px; }
+    .footer-inner{
+        padding:64px 24px;
+    }
+
+    .newsletter-box form{
+        flex-direction:row;
+        justify-content:center;
+    }
+
+    .newsletter-box input{
+        max-width:320px;
+    }
 }
+
 </style>
+
 </head>
 
 <body>
