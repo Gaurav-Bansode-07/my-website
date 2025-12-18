@@ -9,6 +9,16 @@
 <link rel="stylesheet" href="<?= base_url('assets/css/site.css') ?>">
 
 <style>
+
+/* === SCROLL STABILITY FIX (NO SHIFT) === */
+html{
+    scrollbar-gutter: stable;
+}
+
+html, body{
+    overflow-y: auto;
+}
+
 /* =========================
    MOBILE-FIRST FOUNDATION
 ========================= */
@@ -55,7 +65,7 @@ a{
 }
 
 /* =========================
-   HEADER (BASE)
+   HEADER
 ========================= */
 header{
     background:var(--nav-bg);
@@ -76,7 +86,6 @@ header{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    width:100%;
 }
 
 .logo{
@@ -93,7 +102,7 @@ header{
     font-size:12px;
 }
 
-/* Nav – mobile pills */
+/* Nav */
 nav{
     display:flex;
     gap:10px;
@@ -102,9 +111,7 @@ nav{
     -webkit-overflow-scrolling:touch;
 }
 
-nav::-webkit-scrollbar{
-    display:none;
-}
+nav::-webkit-scrollbar{ display:none; }
 
 nav a{
     font-size:12px;
@@ -113,10 +120,6 @@ nav a{
     border-radius:999px;
     background:rgba(255,255,255,.08);
     flex-shrink:0;
-}
-
-nav a:hover{
-    background:rgba(255,255,255,.16);
 }
 
 /* =========================
@@ -162,30 +165,9 @@ nav a:hover{
     color:#fff;
 }
 
-.main-story h1{
-    font-size:24px;
-    line-height:1.2;
-}
-
 .hero-stack{
     display:grid;
     gap:12px;
-}
-
-.stack-item{
-    display:flex;
-    gap:12px;
-    padding:12px;
-    background:var(--bg-alt);
-    border-radius:var(--radius);
-}
-
-.stack-thumb{
-    width:90px;
-    height:70px;
-    object-fit:cover;
-    border-radius:8px;
-    flex-shrink:0;
 }
 
 /* =========================
@@ -199,7 +181,10 @@ nav a:hover{
     white-space:nowrap;
     font-size:13px;
     font-weight:700;
+    -webkit-overflow-scrolling:touch;
 }
+
+.tags-row::-webkit-scrollbar{ display:none; }
 
 /* =========================
    MAIN CONTENT
@@ -233,10 +218,12 @@ nav a:hover{
     gap:16px;
     overflow-x:auto;
     padding-bottom:16px;
+    -webkit-overflow-scrolling:touch;
 }
 
 .video-row a{
     min-width:240px;
+    flex-shrink:0;
 }
 
 /* =========================
@@ -246,52 +233,20 @@ nav a:hover{
     display:grid;
     grid-template-columns:1fr;
     gap:24px;
-    width:100%;                 /* ✅ added */
+    width:100%;
 }
 
-.feed-grid > *{
-    min-width:0;               /* ✅ added (critical) */
-}
+.feed-grid > *{ min-width:0; }
 
 .card{
-    width:100%;                /* ✅ added */
-    overflow:hidden;           /* ✅ added */
-}
-
-.card > a{
-    display:block;             /* ✅ added */
-    width:100%;                /* ✅ added */
+    width:100%;
+    overflow:hidden;
 }
 
 .card-img{
+    width:100%;
     height:180px;
-    width:100%;                /* ✅ added */
     object-fit:cover;
-    border-radius:var(--radius);
-}
-
-/* Mobile-only text safety */
-@media (max-width:767px){
-    .feed-grid h2{
-        display:-webkit-box;
-        -webkit-line-clamp:3;
-        -webkit-box-orient:vertical;
-        overflow:hidden;
-    }
-}
-
-/* =========================
-   SIDEBAR
-========================= */
-aside{
-    display:flex;
-    flex-direction:column;
-    gap:24px;
-}
-
-.sidebar-card{
-    background:var(--bg-alt);
-    padding:20px;
     border-radius:var(--radius);
 }
 
@@ -305,26 +260,26 @@ footer{
 }
 
 /* =========================
-   TABLET & DESKTOP (UNCHANGED)
+   DESKTOP
 ========================= */
-@media(min-width:768px){
+@media (min-width:768px){
+
+    .header-inner,
+    .hero-grid,
+    .container,
+    .social-inner{
+        max-width:1300px;
+        margin:auto;
+    }
 
     .header-inner{
         flex-direction:row;
         align-items:center;
         justify-content:space-between;
-        max-width:1300px;
-        margin:auto;
         padding:16px 24px;
     }
 
-    .header-top{
-        width:auto;
-    }
-
-    nav{
-        overflow:visible;
-    }
+    nav{ overflow:visible; }
 
     nav a{
         background:none;
@@ -332,65 +287,34 @@ footer{
         font-size:14px;
     }
 
-    .btn-subscribe{
-        font-size:14px;
-        padding:8px 20px;
-        border-radius:6px;
-    }
-
-    .social-inner{
-        flex-direction:row;
-        justify-content:space-between;
-        max-width:1300px;
-        margin:auto;
-    }
-
     .hero-grid{
         grid-template-columns:2fr 1fr;
-        max-width:1300px;
-        margin:auto;
     }
 
     .container{
-        max-width:1300px;
-        margin:auto;
         flex-direction:row;
     }
 
-    main{ flex:1; }
+    main{
+        flex:1;
+        min-height:0; /* ✅ FIXED */
+    }
+
     aside{ width:350px; }
 
     .feed-grid{
         grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
     }
 
-    .main-story{
-        height:500px;
-    }
-
-    .main-story h1{
-        font-size:38px;
-    }
+    .main-story{ height:500px; }
 }
 </style>
 </head>
 
 <body>
 
+
 <?= view('partials/header') ?>
-
-
-<div class="social-bar">
-    <div class="social-inner">
-        <div class="logos">
-            <span>As Seen In:</span>
-            <span>Global Post</span>
-            <span>Tech Chronicle</span>
-            <span>Creative Daily</span>
-        </div>
-        <div>Join 75,000+ Readers</div>
-    </div>
-</div>
 
 <section class="hero-grid">
     <?php if (!empty($posts)): 
@@ -418,14 +342,6 @@ footer{
         <?php endif; endfor; ?>
     </div>
 </section>
-
-<div class="tags-row">
-    <span>#FINANCE</span>
-    <span>#REALESTATE</span>
-    <span>#AI</span>
-    <span>#PRODUCTIVITY</span>
-    <span>#MARKETINSIGHTS</span>
-</div>
 
 <div class="container">
     <main>
@@ -464,23 +380,6 @@ footer{
             <?php endforeach; ?>
         </div>
     </main>
-
-    <aside>
-        <div class="sidebar-card author-box">
-            <img src="https://i.pravatar.cc/150?u=sarah" class="author-img">
-            <h3>Hi, I'm Sarah Lee</h3>
-            <p style="font-size: 14px; color: var(--text-muted); margin-top: 10px;">Curating the intersection of finance and technology for modern professionals.</p>
-        </div>
-
-        <div class="sidebar-card">
-            <h3 style="font-size: 18px; border-bottom: 2px solid var(--accent); display: inline-block; margin-bottom: 20px;">Popular Posts</h3>
-            <ul class="popular-list">
-                <li><span class="popular-num">1</span> <div><b>The Future of Decentralized Finance</b></div></li>
-                <li><span class="popular-num">2</span> <div><b>10 Tools for High-Performance Teams</b></div></li>
-                <li><span class="popular-num">3</span> <div><b>Real Estate Trends to Watch in 2025</b></div></li>
-            </ul>
-        </div>
-    </aside>
 </div>
 
 <?= view('partials/footer') ?>
