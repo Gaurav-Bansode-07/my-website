@@ -49,17 +49,18 @@ class Filters extends BaseFilters
      *
      * @var array{before: list<string>, after: list<string>}
      */
-    public array $required = [
-        'before' => [
-            'forcehttps', // Force Global Secure Requests
-            'pagecache',  // Web Page Caching
-        ],
-        'after' => [
-            'pagecache',   // Web Page Caching
-            'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
-        ],
-    ];
+   public array $required = [
+    'before' => [
+        'forcehttps', // Force HTTPS
+        'pagecache',  // Page Cache
+    ],
+    'after' => [
+        'pagecache',   // Page Cache
+        'performance', // Performance Metrics
+        // Debug Toolbar intentionally disabled in production
+    ],
+];
+
 
     /**
      * List of filter aliases that are always
