@@ -35,21 +35,21 @@ class VideoModel extends Model
     /**
      * Homepage: latest published videos
      */
-    public function getLatestVideos(int $limit = 10): array
-    {
-        return $this->where('is_published', 1)
-                    ->where('published_at <=', date('Y-m-d H:i:s'))
-                    ->orderBy('published_at', 'DESC')
-                    ->limit($limit)
-                    ->findAll();
-    }
+    // public function getLatestVideos(int $limit = 10): array
+    // {
+        // return $this->where('is_published', 1)
+                    // ->where('published_at <=', date('Y-m-d H:i:s'))
+                    // ->orderBy('published_at', 'DESC')
+                    // ->limit($limit)
+                    // ->findAll();
+    // }
 	
-	// public function getLatestVideos(int $limit = 10): array
-// {
-    // return $this->where('is_published', 1)
-                // ->orderBy('published_at', 'DESC')
-                // ->limit($limit)
-                // ->findAll();
-// }
+	public function getLatestVideos(int $limit = 10): array
+{
+    return $this->where('is_published', 1)
+                ->orderBy('published_at', 'DESC')
+                ->limit($limit)
+                ->findAll();
+}
 
 }
