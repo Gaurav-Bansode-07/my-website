@@ -160,10 +160,58 @@ nav a:hover{
         display:flex;
     }
 
-    .btn-subscribe{
+    /* Hide header CTA only */
+    #main-header .btn-subscribe{
         display:none;
     }
 }
+/* =========================
+   FOOTER — MOBILE FIX
+========================= */
+@media (max-width: 767px){
+
+    footer{
+        margin-top:60px;
+    }
+
+    .footer-inner{
+        padding:32px 16px 40px;
+        gap:20px;
+    }
+
+    .newsletter-box h2{
+        font-size:20px;
+        line-height:1.3;
+    }
+
+    .newsletter-box p{
+        font-size:14px;
+    }
+
+    .newsletter-box form{
+        flex-direction:column;
+        gap:12px;
+        width:100%;
+    }
+
+    .newsletter-box input{
+        width:100%;
+        font-size:15px;
+    }
+
+    .newsletter-box button{
+        width:100%;
+        padding:14px 0;
+        font-size:14px;
+        display:block; /* explicit safety */
+    }
+
+    footer .logo{
+        font-size:16px;
+        letter-spacing:.08em;
+    }
+}
+
 
 /* Desktop reset */
 @media (min-width:768px){
@@ -541,26 +589,30 @@ footer{
     }
 }
 
-
 /* =========================
-   ARTICLE PAGE
+   ARTICLE PAGE (CANONICAL)
 ========================= */
 
 .article-wrapper {
     width: 100%;
-    margin-top: 80px; /* same as header height */
+    margin-top: 0; /* header is sticky */
+    background: #ffffff;
 }
 
-/* ARTICLE HERO – LIGHT MODE */
+/* =========================
+   ARTICLE HERO
+========================= */
+
 .article-hero {
+    position: relative;
     background: #ffffff;
     color: #0f172a;
     border-top: 1px solid var(--border);
 }
 
-/* HEADER */
+/* Header (title + meta) */
 .article-header {
-    padding: 96px 16px 40px;
+    padding: 36px 16px 24px;
 }
 
 .article-inner {
@@ -568,41 +620,162 @@ footer{
     margin-inline: auto;
 }
 
-/* TITLE */
+/* Title */
 .article-header h1 {
-    font-size: clamp(28px, 4vw, 48px);
+    font-size: clamp(30px, 4vw, 48px);
     line-height: 1.2;
-    margin: 0;
-    color: #0f172a;
+    margin: 0 0 12px;
+    color: #020617;
 }
 
-/* META */
+/* Meta */
 .article-meta {
-    font-size: 14px;
-    margin-bottom: 12px;
-    color: var(--text-muted);
+    font-size: 13px;
+    opacity: 0.85;
 }
 
-/* HERO IMAGE */
+/* =========================
+   HERO IMAGE (EDITORIAL)
+========================= */
+
 .article-hero-img {
     width: 100%;
-    max-height: 520px;
+    max-width: 720px;              /* same rhythm as text */
+    max-height: 380px;
     object-fit: cover;
     display: block;
+    margin: 8px auto 40px;
+    border-radius: 2px;
+    filter: saturate(0.92) contrast(1.05);
 }
 
-/* CONTENT */
+/* =========================
+   ARTICLE CONTENT
+========================= */
+
 .article-content {
-    padding: 64px 16px 120px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 20px 96px;
 }
 
+/* Rich text base */
 .article-content .content-rich-text {
-    max-width: 760px;
-    margin-inline: auto;
-    font-size: 18px;
+    font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size: 19px;
     line-height: 1.75;
+    color: #020617;
 }
 
-.article-content .content-rich-text p {
-    text-align: left;
+/* Remove top margin if first element */
+.content-rich-text > *:first-child {
+    margin-top: 0;
+}
+
+/* =========================
+   INTRO PARAGRAPH (LEAD)
+========================= */
+
+.article-content .content-rich-text > p:first-of-type {
+    font-size: 21px;
+    line-height: 1.7;
+    color: #020617;
+    margin-bottom: 40px;
+    max-width: 680px;
+}
+
+/* Optional drop cap */
+.article-content .content-rich-text > p:first-of-type::first-letter {
+    float: left;
+    font-size: 3.2em;
+    line-height: 1;
+    margin-right: 8px;
+    font-weight: 600;
+}
+
+/* =========================
+   HEADINGS
+========================= */
+
+.article-content h2 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 28px;
+    line-height: 1.3;
+    margin: 64px 0 18px;
+    color: #020617;
+    font-weight: 600;
+}
+
+.article-content h3 {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 21px;
+    margin: 48px 0 14px;
+    font-weight: 600;
+}
+
+/* Tighten heading → paragraph */
+.article-content h2 + p,
+.article-content h3 + p {
+    margin-top: 0;
+}
+
+/* =========================
+   PARAGRAPHS
+========================= */
+
+.article-content p {
+    margin-bottom: 18px; /* ↓ was 24px */
+    max-width: 680px;
+}
+.article-content p + p {
+    margin-top: -6px;
+}
+
+
+/* =========================
+   LISTS
+========================= */
+
+.article-content ul,
+.article-content ol {
+    margin: 24px 0 36px 24px;
+    padding: 0;
+}
+
+.article-content li {
+    margin-bottom: 10px;
+    line-height: 1.7;
+}
+
+/* =========================
+   INLINE ELEMENTS
+========================= */
+
+.article-content strong {
+    font-weight: 600;
+}
+
+.article-content a {
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* =========================
+   DIVIDERS
+========================= */
+
+.article-content hr {
+    border: none;
+    height: 1px;
+    background: #e5e7eb;
+    margin: 64px 0;
+}
+
+/* =========================
+   HERO → CONTENT SPACING FIX
+========================= */
+
+.article-hero + .article-content h2:first-child {
+    margin-top: 16px;
 }

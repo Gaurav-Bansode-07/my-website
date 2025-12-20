@@ -8,6 +8,10 @@
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+	<!-- Editorial serif for article body -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;600&display=swap" rel="stylesheet">
 
     <!-- Site CSS -->
     <link rel="stylesheet" href="<?= base_url('assets/css/site.css?v=1.2') ?>">
