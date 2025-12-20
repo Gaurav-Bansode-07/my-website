@@ -1,3 +1,4 @@
+# Writable directories
 /writable/cache/*
 !/writable/cache/.gitkeep
 
@@ -10,12 +11,13 @@
 /writable/uploads/*
 !/writable/uploads/.gitkeep
 
-writable/*
+/writable/*
 !writable/.gitkeep
 
-
+# Dependencies
 /vendor/
 
+# Environment files (IGNORE ALL)
 .env
-
-
+.env.*
+!.env.example
