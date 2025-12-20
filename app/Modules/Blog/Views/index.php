@@ -1,86 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Blog | PrincipaCore</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?= $this->extend('layouts/main') ?>
+<?= $this->section('content') ?>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: Inter, sans-serif;
-            background: #f8fafc;
-            margin: 0;
-            color: #0f172a;
-        }
-        .container {
-            max-width: 1100px;
-            margin: auto;
-            padding: 60px 24px;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 24px;
-        }
-        .card {
-            background: #fff;
-            border-radius: 14px;
-            padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,.06);
-        }
-        .card h2 {
-            font-family: "Plus Jakarta Sans", sans-serif;
-            font-size: 20px;
-            margin: 0 0 10px;
-        }
-        .card p {
-            color: #475569;
-        }
-        .card a {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>Blog</h1>
+<main class="container blog-page">
+    <!-- Optional intro block (kept for spacing consistency) -->
+    <div style="margin-bottom:40px;"></div>
 
     <?php if (empty($posts)): ?>
-        <p>No posts published yet.</p>
+        <p>No insights published yet. Check back soon.</p>
     <?php else: ?>
-        <div class="grid">
+
+        <div class="feed-grid">
             <?php foreach ($posts as $post): ?>
-                <?php if (empty($post['slug'])) continue; ?>
+                <article class="card">
+                    <a href="<?= site_url('blog/' . esc($post['slug'])) ?>">
 
-                <div class="card">
+                        <img
+                            src="<?= esc($post['hero_image_url'] ?? base_url('assets/images/placeholder.jpg')) ?>"
+                            class="card-img"
+                            alt="<?= esc($post['title']) ?>"
+                            loading="lazy"
+                        >
 
-                    <?php if (! empty($post['hero_image_url'])): ?>
-                        <div style="
-                            height:160px;
-                            border-radius:10px;
-                            background-image:url('<?= esc($post['hero_image_url']) ?>');
-                            background-size:cover;
-                            background-position:center;
-                            margin-bottom:16px;
-                        "></div>
-                    <?php endif; ?>
+                        <div style="padding:20px;">
+                            <span style="color:var(--primary); font-weight:700; font-size:11px;">
+                                <?= esc($post['category'] ?? 'Intelligence') ?>
+                            </span>
 
-                    <h2><?= esc($post['title']) ?></h2>
-                    <p><?= esc($post['summary'] ?? '') ?></p>
+                            <h2 style="margin:10px 0;">
+                                <?= esc($post['title']) ?>
+                            </h2>
 
-                    <a href="<?= site_url('blog/' . $post['slug']) ?>">
-                        Read more →
+                            <p style="color:var(--text-muted);">
+                                <?= esc($post['summary']) ?>
+                            </p>
+                        </div>
+
                     </a>
-                </div>
+                </article>
             <?php endforeach; ?>
         </div>
-    <?php endif; ?>
-</div>
 
-</body>
-</html>
+    <?php endif; ?>
+
+</main>
+
+<?= $this->endSection() ?>
