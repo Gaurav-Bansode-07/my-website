@@ -44,11 +44,11 @@ class VideoModel extends Model
                     // ->findAll();
     // }
 	
-	public function getLatestVideos(int $limit = 10): array
+public function getLatestVideos(): array
 {
     return $this->where('is_published', 1)
                 ->orderBy('published_at', 'DESC')
-                ->limit($limit)
+                ->orderBy('id', 'DESC') // safety tie-breaker
                 ->findAll();
 }
 
