@@ -12,14 +12,19 @@ class AdminController extends BaseController
     public function __construct()
     {
         helper(['url', 'text']);
+        $this->blogModel = new AdminBlogModel();
+    }
 
-        // Admin auth guard (basic)
-        if (!session('isLoggedIn') || session('role') !== 'admin') {
-            redirect()->to('/login')->with('error', 'Access denied')->send();
-            exit;
+    /**
+     * 🔐 Admin guard (DO NOT use in constructor)
+     */
+    private function requireAdmin()
+    {
+        if (!session()->get('isLoggedIn') || session()->get('role') !== 'admin') {
+            return redirect()->to('/login')->with('error', 'Access denied');
         }
 
-        $this->blogModel = new AdminBlogModel();
+        return null;
     }
 
     /**
@@ -27,6 +32,10 @@ class AdminController extends BaseController
      */
     public function index()
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         return redirect()->to('/admin/blogs');
     }
 
@@ -36,6 +45,10 @@ class AdminController extends BaseController
      */
     public function blogs()
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         $data['posts'] = $this->blogModel
             ->orderBy('created_at', 'DESC')
             ->findAll();
@@ -49,6 +62,10 @@ class AdminController extends BaseController
      */
     public function create()
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         return view('App\Modules\Admin\Views\create');
     }
 
@@ -58,6 +75,10 @@ class AdminController extends BaseController
      */
     public function store()
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         $title = trim($this->request->getPost('title'));
 
         if ($title === '') {
@@ -80,7 +101,7 @@ class AdminController extends BaseController
             'is_published'   => $isPublished ? 1 : 0,
             'published_at'   => $isPublished ? date('Y-m-d H:i:s') : null,
 
-            // ✅ REQUIRED enum defaults (fixes CHECK constraint error)
+            // ✅ REQUIRED enum defaults
             'layout_mode'    => 'standard',
             'font_scale'     => 'normal',
         ];
@@ -97,6 +118,10 @@ class AdminController extends BaseController
      */
     public function edit($id)
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         $post = $this->blogModel->find($id);
 
         if (!$post) {
@@ -111,6 +136,10 @@ class AdminController extends BaseController
      */
     public function update($id)
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         $post = $this->blogModel->find($id);
 
         if (!$post) {
@@ -139,7 +168,7 @@ class AdminController extends BaseController
                 ? ($post['published_at'] ?? date('Y-m-d H:i:s'))
                 : null,
 
-            // ✅ Preserve / enforce valid enum values
+            // ✅ Preserve enum safety
             'layout_mode'    => $post['layout_mode'] ?? 'standard',
             'font_scale'     => $post['font_scale']  ?? 'normal',
         ];
@@ -156,6 +185,10 @@ class AdminController extends BaseController
      */
     public function delete($id)
     {
+        if ($redirect = $this->requireAdmin()) {
+            return $redirect;
+        }
+
         if (!$this->blogModel->find($id)) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }
@@ -164,14 +197,5 @@ class AdminController extends BaseController
 
         return redirect()->to('/admin/blogs')
             ->with('success', 'Post deleted successfully.');
-    }
-
-    /**
-     * Test route
-     * URL: /admin/test
-     */
-    public function test()
-    {
-        return view('App\Modules\Admin\Views\test');
     }
 }
