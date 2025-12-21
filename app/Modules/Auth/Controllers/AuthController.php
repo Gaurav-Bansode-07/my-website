@@ -11,12 +11,12 @@ class AuthController extends BaseController
         return view('App\Modules\Auth\Views\login');
     }
 
-   public function attemptLogin()
+public function attemptLogin()
 {
-    $auth = service('auth');
+    $auth = service('authentication');
 
-    // ✅ Shield safety: logout existing session
-    if ($auth->loggedIn()) {
+    // ✅ Shield safety: if already logged in, reset
+    if ($auth->check()) {
         $auth->logout();
         session()->regenerate(true);
     }
@@ -39,12 +39,13 @@ class AuthController extends BaseController
         'username'   => $user->username,
         'isLoggedIn' => true,
         'role'       => 'admin',
-        'login_time' => time(), // ✅ needed for 6-hour timeout
+        'login_time' => time(), // for 6-hour expiry
     ]);
 
     return redirect()->to('/admin/blogs')
         ->with('success', 'Welcome back!');
 }
+
 
 
 
