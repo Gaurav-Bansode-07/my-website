@@ -63,6 +63,7 @@ class View extends BaseView
 	public array $namespacePaths = [
         'Home' => APPPATH . 'Modules/Home/Views',
         'Blog' => APPPATH . 'Modules/Blog/Views',
+		
     ];
 	
 }

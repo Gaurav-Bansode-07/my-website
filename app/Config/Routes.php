@@ -33,7 +33,9 @@ $modules = [
     'Auth',
     'Home',
     'Blog',
+    'Admin', // ✅ ADD THIS
 ];
+
 
 foreach ($modules as $module) {
     $path = APPPATH . "Modules/{$module}/Config/Routes.php";
