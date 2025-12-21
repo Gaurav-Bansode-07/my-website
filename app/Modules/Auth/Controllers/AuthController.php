@@ -13,11 +13,9 @@ class AuthController extends BaseController
 
 public function attemptLogin()
 {
-    $auth = service('authentication');
-
-    // ✅ Shield safety: if already logged in, reset
-    if ($auth->check()) {
-        $auth->logout();
+    // 1. Use the global helper instead of the service variable
+    if (auth()->loggedIn()) {
+        auth()->logout();
         session()->regenerate(true);
     }
 
@@ -26,27 +24,26 @@ public function attemptLogin()
         'password' => $this->request->getPost('password'),
     ];
 
-    if (! $auth->attempt($credentials)) {
+    // 2. Use auth()->attempt()
+    if (! auth()->attempt($credentials)->isOK()) {
         return redirect()->back()
             ->withInput()
             ->with('error', 'Invalid login credentials');
     }
 
-    $user = $auth->user();
+    $user = auth()->user();
 
     session()->set([
         'user_id'    => $user->id,
         'username'   => $user->username,
         'isLoggedIn' => true,
         'role'       => 'admin',
-        'login_time' => time(), // for 6-hour expiry
+        'login_time' => time(), 
     ]);
 
     return redirect()->to('/admin/blogs')
         ->with('success', 'Welcome back!');
 }
-
-
 
 
     public function logout()
