@@ -11,11 +11,13 @@ class AuthController extends BaseController
         return view('App\Modules\Auth\Views\login');
     }
 
-    public function attemptLogin()
+   public function attemptLogin()
 {
-    // ✅ If already logged in, reset first (Shield safety)
-    if (auth()->loggedIn()) {
-        auth()->logout();
+    $auth = service('auth');
+
+    // ✅ Shield safety: logout existing session
+    if ($auth->loggedIn()) {
+        $auth->logout();
         session()->regenerate(true);
     }
 
@@ -24,32 +26,20 @@ class AuthController extends BaseController
         'password' => $this->request->getPost('password'),
     ];
 
-    $auth = service('auth');
-
-    // ❌ Login failed
     if (! $auth->attempt($credentials)) {
         return redirect()->back()
             ->withInput()
-            ->with('error', 'Invalid email or password');
+            ->with('error', 'Invalid login credentials');
     }
 
-    // ✅ EXTRA SAFETY: ensure user exists
-    $user = auth()->user();
+    $user = $auth->user();
 
-    if (! $user) {
-        auth()->logout();
-        session()->regenerate(true);
-
-        return redirect()->back()
-            ->with('error', 'Authentication failed. Please try again.');
-    }
-
-    // ✅ App-level session flags (temporary bridge)
     session()->set([
         'user_id'    => $user->id,
         'username'   => $user->username,
         'isLoggedIn' => true,
         'role'       => 'admin',
+        'login_time' => time(), // ✅ needed for 6-hour timeout
     ]);
 
     return redirect()->to('/admin/blogs')
