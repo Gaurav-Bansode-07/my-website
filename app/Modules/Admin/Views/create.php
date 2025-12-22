@@ -1,9 +1,7 @@
 <?php $this->extend('layouts/main') ?>
-
 <?php $this->section('title') ?>Create New Post<?php $this->endSection() ?>
 
 <?php $this->section('content') ?>
-
 <style>
     /* Admin Panel Overrides */
     #main-header {
@@ -99,13 +97,18 @@
 
         <div class="form-group">
             <label>Tags (comma separated)</label>
-            <input type="text" name="tags" value="<?= esc(old('tags')) ?>" class="form-input" placeholder="finance, investing, startups">
+            <input type="text" 
+                   name="tags" 
+                   value="<?= esc(old('tags')) ?>" 
+                   class="form-input" 
+                   placeholder="php, codeigniter, tutorial">
+            <small class="text-muted">Separate tags with commas</small>
         </div>
 
         <div class="form-group">
             <label>Status</label>
             <select name="status" class="form-input">
-                <option value="draft" <?= old('status') !== 'published' ? 'selected' : '' ?>>Draft</option>
+                <option value="draft" <?= old('status', 'draft') !== 'published' ? 'selected' : '' ?>>Draft</option>
                 <option value="published" <?= old('status') === 'published' ? 'selected' : '' ?>>Published</option>
             </select>
         </div>
@@ -126,7 +129,6 @@
 <!-- Quill.js -->
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const quill = new Quill('#editor', {
@@ -146,18 +148,17 @@
             placeholder: 'Start writing your masterpiece...',
         });
 
-        // Restore content if form was submitted with errors (old input)
+        // Restore content from old input if form failed validation
         const oldContent = <?= json_encode(old('content') ?? '') ?>;
         if (oldContent && oldContent.trim() !== '') {
             quill.root.innerHTML = oldContent;
         }
 
-        // Sync Quill content to hidden textarea on submit
+        // Sync Quill content to hidden field on submit
         const form = document.querySelector('form');
         form.addEventListener('submit', function () {
             document.getElementById('content-hidden').value = quill.root.innerHTML;
         });
     });
 </script>
-
 <?php $this->endSection() ?>

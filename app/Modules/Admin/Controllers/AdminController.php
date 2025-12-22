@@ -16,39 +16,11 @@ class AdminController extends BaseController
     }
 
     /**
-     * 🔐 Admin guard (DO NOT use in constructor)
-     */
-    private function requireAdmin()
-    {
-        if (!session()->get('isLoggedIn') || session()->get('role') !== 'admin') {
-            return redirect()->to('/login')->with('error', 'Access denied');
-        }
-
-        return null;
-    }
-
-    /**
-     * Redirect /admin → /admin/blogs
-     */
-    public function index()
-    {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
-        return redirect()->to('/admin/blogs');
-    }
-
-    /**
      * Blog list
-     * URL: /admin/blogs
+     * URL: /admin/blogs (and /admin)
      */
     public function blogs()
     {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
         $data['posts'] = $this->blogModel
             ->orderBy('created_at', 'DESC')
             ->findAll();
@@ -62,25 +34,16 @@ class AdminController extends BaseController
      */
     public function create()
     {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
         return view('App\Modules\Admin\Views\create');
     }
 
     /**
-     * Store post
-     * URL: POST /admin/blogs/store
+     * Store new post
+     * POST: /admin/blogs/store
      */
     public function store()
     {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
-        $title = trim($this->request->getPost('title'));
-
+        $title = trim($this->request->getPost('title') ?? '');
         if ($title === '') {
             return redirect()->back()
                 ->withInput()
@@ -88,6 +51,13 @@ class AdminController extends BaseController
         }
 
         $isPublished = $this->request->getPost('status') === 'published';
+
+        // === SAFE & ROBUST TAGS HANDLING ===
+        $tagsInput  = $this->request->getPost('tags');
+        $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
+        $tagsArray  = $tagsString !== ''
+            ? array_filter(array_map('trim', explode(',', $tagsString)))
+            : [];
 
         $data = [
             'title'          => $title,
@@ -97,16 +67,20 @@ class AdminController extends BaseController
             'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $this->request->getPost('hero_image'),
             'category'       => $this->request->getPost('category'),
-            'tags'           => $this->request->getPost('tags'),
+            'tags'           => $tagsArray,                    // Always an array, never null
             'is_published'   => $isPublished ? 1 : 0,
             'published_at'   => $isPublished ? date('Y-m-d H:i:s') : null,
-
-            // ✅ REQUIRED enum defaults
             'layout_mode'    => 'standard',
             'font_scale'     => 'normal',
         ];
 
-        $this->blogModel->insert($data);
+        try {
+            $this->blogModel->insert($data);
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Database Error: ' . $e->getMessage());
+        }
 
         return redirect()->to('/admin/blogs')
             ->with('success', 'Post created successfully.');
@@ -118,12 +92,7 @@ class AdminController extends BaseController
      */
     public function edit($id)
     {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
         $post = $this->blogModel->find($id);
-
         if (!$post) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }
@@ -133,26 +102,30 @@ class AdminController extends BaseController
 
     /**
      * Update post
+     * POST: /admin/blogs/update/{id}
      */
     public function update($id)
     {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
         $post = $this->blogModel->find($id);
-
         if (!$post) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }
 
-        $title = trim($this->request->getPost('title'));
-
+        $title = trim($this->request->getPost('title') ?? '');
         if ($title === '') {
-            return redirect()->back()->withInput()->with('error', 'Title is required.');
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Title is required.');
         }
 
         $isPublished = $this->request->getPost('status') === 'published';
+
+        // === SAME SAFE TAGS HANDLING FOR UPDATE ===
+        $tagsInput  = $this->request->getPost('tags');
+        $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
+        $tagsArray  = $tagsString !== ''
+            ? array_filter(array_map('trim', explode(',', $tagsString)))
+            : [];
 
         $data = [
             'title'          => $title,
@@ -162,15 +135,13 @@ class AdminController extends BaseController
             'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $this->request->getPost('hero_image'),
             'category'       => $this->request->getPost('category'),
-            'tags'           => $this->request->getPost('tags'),
+            'tags'           => $tagsArray,                    // Always an array
             'is_published'   => $isPublished ? 1 : 0,
             'published_at'   => $isPublished
                 ? ($post['published_at'] ?? date('Y-m-d H:i:s'))
                 : null,
-
-            // ✅ Preserve enum safety
             'layout_mode'    => $post['layout_mode'] ?? 'standard',
-            'font_scale'     => $post['font_scale']  ?? 'normal',
+            'font_scale'     => $post['font_scale'] ?? 'normal',
         ];
 
         $this->blogModel->update($id, $data);
@@ -185,10 +156,6 @@ class AdminController extends BaseController
      */
     public function delete($id)
     {
-        if ($redirect = $this->requireAdmin()) {
-            return $redirect;
-        }
-
         if (!$this->blogModel->find($id)) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }

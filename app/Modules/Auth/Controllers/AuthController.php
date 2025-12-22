@@ -8,54 +8,45 @@ class AuthController extends BaseController
 {
     public function login()
     {
+        // REMOVE THIS ENTIRE BLOCK
+        // if (auth()->loggedIn()) {
+        //     return redirect()->to('/admin/blogs');
+        // }
+
+        // Just always show the login form
+        // Shield's filter will redirect here when needed
         return view('App\Modules\Auth\Views\login');
     }
 
-public function attemptLogin()
-{
-    // 1. Use the global helper instead of the service variable
-    if (auth()->loggedIn()) {
-        auth()->logout();
-        session()->regenerate(true);
+    public function attemptLogin()
+    {
+        if (auth()->loggedIn()) {
+            auth()->logout();
+        }
+
+        $credentials = [
+            'email'    => $this->request->getPost('login'),
+            'password' => $this->request->getPost('password'),
+        ];
+
+        $result = auth()->attempt($credentials, true);
+
+        if (! $result->isOK()) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $result->reason());
+        }
+
+        // Shield automatically redirects to /admin/blogs now (from Auth config)
+        return redirect()->to('/admin/blogs')
+            ->with('success', 'Welcome back, ' . esc(auth()->user()->username) . '!');
     }
-
-    $credentials = [
-        'email'    => $this->request->getPost('login'),
-        'password' => $this->request->getPost('password'),
-    ];
-
-    // 2. Use auth()->attempt()
-    if (! auth()->attempt($credentials)->isOK()) {
-        return redirect()->back()
-            ->withInput()
-            ->with('error', 'Invalid login credentials');
-    }
-
-    $user = auth()->user();
-
-    session()->set([
-        'user_id'    => $user->id,
-        'username'   => $user->username,
-        'isLoggedIn' => true,
-        'role'       => 'admin',
-        'login_time' => time(), 
-    ]);
-
-    return redirect()->to('/admin/blogs')
-        ->with('success', 'Welcome back!');
-}
-
 
     public function logout()
-{
-    // Shield logout
-    auth()->logout();
-
-    // Destroy app session
-    session()->destroy();
-
-    return redirect()->to('/login')
-        ->with('success', 'You have been logged out.');
-}
-
+    {
+        auth()->logout();
+        session()->destroy();
+        return redirect()->to('/login')
+            ->with('success', 'You have been logged out.');
+    }
 }

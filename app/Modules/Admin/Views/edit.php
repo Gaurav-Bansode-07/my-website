@@ -1,11 +1,8 @@
 <?php $this->extend('layouts/main') ?>
-
 <?php $this->section('title') ?>Edit Post – <?= esc($post['title']) ?><?php $this->endSection() ?>
 
 <?php $this->section('content') ?>
-
 <style>
-    /* Admin Panel Overrides */
     #main-header {
         background: #111827;
         box-shadow: 0 2px 12px rgba(0,0,0,0.2);
@@ -15,7 +12,6 @@
     #main-header .logo { color: #fff; font-weight: 800; font-size: 20px; }
     footer { display: none !important; }
 
-    /* Quill Editor Styling */
     #editor {
         background: white;
         border-radius: 12px;
@@ -67,12 +63,19 @@
 
         <div class="form-group">
             <label>Title <span class="required">*</span></label>
-            <input type="text" name="title" value="<?= esc(old('title', $post['title'])) ?>" required class="form-input">
+            <input type="text" 
+                   name="title" 
+                   value="<?= esc(old('title', $post['title'])) ?>" 
+                   required 
+                   class="form-input">
         </div>
 
         <div class="form-group">
             <label>Subtitle</label>
-            <input type="text" name="subtitle" value="<?= esc(old('subtitle', $post['subtitle'] ?? '')) ?>" class="form-input">
+            <input type="text" 
+                   name="subtitle" 
+                   value="<?= esc(old('subtitle', $post['subtitle'] ?? '')) ?>" 
+                   class="form-input">
         </div>
 
         <div class="form-group">
@@ -80,34 +83,55 @@
             <textarea name="summary" rows="4" class="form-input"><?= esc(old('summary', $post['summary'] ?? '')) ?></textarea>
         </div>
 
-        <!-- Quill Rich Text Editor -->
         <div class="form-group">
             <label>Content <span class="required">*</span></label>
             <div id="editor"></div>
-            <!-- Hidden field to submit Quill content -->
             <textarea name="content" id="content-hidden" style="display:none;"></textarea>
         </div>
 
         <div class="form-group">
             <label>Hero Image URL</label>
-            <input type="text" name="hero_image" value="<?= esc(old('hero_image', $post['hero_image_url'] ?? '')) ?>" class="form-input" placeholder="uploads/blog/image.jpg">
+            <input type="text" 
+                   name="hero_image" 
+                   value="<?= esc(old('hero_image', $post['hero_image_url'] ?? '')) ?>" 
+                   class="form-input" 
+                   placeholder="uploads/blog/image.jpg">
         </div>
 
         <div class="form-group">
             <label>Category</label>
-            <input type="text" name="category" value="<?= esc(old('category', $post['category'])) ?>" class="form-input">
+            <input type="text" 
+                   name="category" 
+                   value="<?= esc(old('category', $post['category'] ?? '')) ?>" 
+                   class="form-input">
         </div>
 
         <div class="form-group">
-            <label>Tags (JSON array)</label>
-            <input type="text" name="tags" value="<?= esc(old('tags', $post['tags'] ?? '')) ?>" class="form-input" placeholder='["finance", "investing", "2025"]'>
+            <label>Tags (comma separated)</label>
+            <?php
+                // Convert JSON array to comma-separated string for editing
+                $existingTags = '';
+                if (!empty($post['tags']) && is_array($post['tags'])) {
+                    $existingTags = implode(', ', $post['tags']);
+                }
+            ?>
+            <input type="text" 
+                   name="tags" 
+                   value="<?= esc(old('tags', $existingTags)) ?>" 
+                   class="form-input" 
+                   placeholder="finance, investing, startups">
+            <small class="text-muted">Separate tags with commas</small>
         </div>
 
         <div class="form-group">
             <label>Status</label>
             <select name="status" class="form-input">
-                <option value="draft" <?= old('status', $post['is_published'] ? 'published' : 'draft') !== 'published' ? 'selected' : '' ?>>Draft</option>
-                <option value="published" <?= old('status', $post['is_published'] ? 'published' : 'draft') === 'published' ? 'selected' : '' ?>>Published</option>
+                <option value="draft" <?= old('status', $post['is_published'] ? 'published' : 'draft') !== 'published' ? 'selected' : '' ?>>
+                    Draft
+                </option>
+                <option value="published" <?= old('status', $post['is_published'] ? 'published' : 'draft') === 'published' ? 'selected' : '' ?>>
+                    Published
+                </option>
             </select>
         </div>
 
@@ -125,10 +149,8 @@
     </form>
 </div>
 
-<!-- Quill.js -->
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const quill = new Quill('#editor', {
@@ -148,19 +170,17 @@
             placeholder: 'Start writing your masterpiece...',
         });
 
-        // Load existing content safely
-        const existingContent = <?= json_encode($post['content_html'] ?? '') ?>;
-        if (existingContent && existingContent.trim() !== '') {
-            quill.root.innerHTML = existingContent;
+        // Load existing content (from DB or old input)
+        const savedContent = <?= json_encode(old('content', $post['content_html'] ?? '')) ?>;
+        if (savedContent && savedContent.trim() !== '') {
+            quill.root.innerHTML = savedContent;
         }
 
-        // Sync to hidden textarea on form submit
+        // Sync on submit
         const form = document.querySelector('form');
         form.addEventListener('submit', function () {
-            const hiddenField = document.getElementById('content-hidden');
-            hiddenField.value = quill.root.innerHTML;
+            document.getElementById('content-hidden').value = quill.root.innerHTML;
         });
     });
 </script>
-
 <?php $this->endSection() ?>
