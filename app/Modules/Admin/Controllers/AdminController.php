@@ -4,6 +4,7 @@ namespace App\Modules\Admin\Controllers;
 
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
+use CodeIgniter\Files\File;
 
 class AdminController extends BaseController
 {
@@ -52,12 +53,38 @@ class AdminController extends BaseController
 
         $isPublished = $this->request->getPost('status') === 'published';
 
-        // === SAFE & ROBUST TAGS HANDLING ===
+        // SAFE & ROBUST TAGS HANDLING
         $tagsInput  = $this->request->getPost('tags');
         $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
         $tagsArray  = $tagsString !== ''
             ? array_filter(array_map('trim', explode(',', $tagsString)))
             : [];
+
+        // HERO IMAGE UPLOAD TO SPACES
+        $heroImageUrl = null;
+        $uploadedFile = $this->request->getFile('hero_image_file');
+
+        if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
+            // Validation
+            if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Only image files are allowed.');
+            }
+            if ($uploadedFile->getSize('mb') > 2) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Image must be less than 2MB.');
+            }
+
+            $newName = $uploadedFile->getRandomName();
+
+            // Upload to Spaces in 'blog/' subfolder using s3 disk
+            $path = $uploadedFile->store('blog/', $newName, 's3');
+
+            // Full public CDN URL
+            $heroImageUrl = env('AWS_URL') . '/' . $path;
+        }
 
         $data = [
             'title'          => $title,
@@ -65,9 +92,9 @@ class AdminController extends BaseController
             'subtitle'       => $this->request->getPost('subtitle'),
             'summary'        => $this->request->getPost('summary'),
             'content_html'   => $this->request->getPost('content'),
-            'hero_image_url' => $this->request->getPost('hero_image'),
+            'hero_image_url' => $heroImageUrl,
             'category'       => $this->request->getPost('category'),
-            'tags'           => $tagsArray,                    // Always an array, never null
+            'tags'           => $tagsArray,
             'is_published'   => $isPublished ? 1 : 0,
             'published_at'   => $isPublished ? date('Y-m-d H:i:s') : null,
             'layout_mode'    => 'standard',
@@ -120,12 +147,38 @@ class AdminController extends BaseController
 
         $isPublished = $this->request->getPost('status') === 'published';
 
-        // === SAME SAFE TAGS HANDLING FOR UPDATE ===
+        // SAFE & ROBUST TAGS HANDLING
         $tagsInput  = $this->request->getPost('tags');
         $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
         $tagsArray  = $tagsString !== ''
             ? array_filter(array_map('trim', explode(',', $tagsString)))
             : [];
+
+        // HERO IMAGE UPLOAD TO SPACES (EDIT)
+        $heroImageUrl = $post['hero_image_url']; // Keep existing by default
+
+        $uploadedFile = $this->request->getFile('hero_image_file');
+
+        if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
+            // Validation
+            if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Only image files are allowed.');
+            }
+            if ($uploadedFile->getSize('mb') > 2) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Image must be less than 2MB.');
+            }
+
+            $newName = $uploadedFile->getRandomName();
+
+            // Upload new image to Spaces
+            $path = $uploadedFile->store('blog/', $newName, 's3');
+
+            $heroImageUrl = env('AWS_URL') . '/' . $path;
+        }
 
         $data = [
             'title'          => $title,
@@ -133,9 +186,9 @@ class AdminController extends BaseController
             'subtitle'       => $this->request->getPost('subtitle'),
             'summary'        => $this->request->getPost('summary'),
             'content_html'   => $this->request->getPost('content'),
-            'hero_image_url' => $this->request->getPost('hero_image'),
+            'hero_image_url' => $heroImageUrl,
             'category'       => $this->request->getPost('category'),
-            'tags'           => $tagsArray,                    // Always an array
+            'tags'           => $tagsArray,
             'is_published'   => $isPublished ? 1 : 0,
             'published_at'   => $isPublished
                 ? ($post['published_at'] ?? date('Y-m-d H:i:s'))
@@ -156,7 +209,8 @@ class AdminController extends BaseController
      */
     public function delete($id)
     {
-        if (!$this->blogModel->find($id)) {
+        $post = $this->blogModel->find($id);
+        if (!$post) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }
 
