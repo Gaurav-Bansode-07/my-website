@@ -58,23 +58,24 @@
         <div class="alert alert-error">✕ <?= esc(session('error')) ?></div>
     <?php endif; ?>
 
-    <form action="<?= site_url('admin/blogs/update/' . $post['id']) ?>" method="post" class="admin-form">
+    <!-- IMPORTANT: enctype for file upload -->
+    <form action="<?= site_url('admin/blogs/update/' . $post['id']) ?>" method="post" class="admin-form" enctype="multipart/form-data">
         <?= csrf_field() ?>
 
         <div class="form-group">
             <label>Title <span class="required">*</span></label>
-            <input type="text" 
-                   name="title" 
-                   value="<?= esc(old('title', $post['title'])) ?>" 
-                   required 
+            <input type="text"
+                   name="title"
+                   value="<?= esc(old('title', $post['title'])) ?>"
+                   required
                    class="form-input">
         </div>
 
         <div class="form-group">
             <label>Subtitle</label>
-            <input type="text" 
-                   name="subtitle" 
-                   value="<?= esc(old('subtitle', $post['subtitle'] ?? '')) ?>" 
+            <input type="text"
+                   name="subtitle"
+                   value="<?= esc(old('subtitle', $post['subtitle'] ?? '')) ?>"
                    class="form-input">
         </div>
 
@@ -89,36 +90,53 @@
             <textarea name="content" id="content-hidden" style="display:none;"></textarea>
         </div>
 
+        <!-- HERO IMAGE UPLOAD WITH PREVIEW (EDIT VERSION) -->
         <div class="form-group">
-            <label>Hero Image URL</label>
-            <input type="text" 
-                   name="hero_image" 
-                   value="<?= esc(old('hero_image', $post['hero_image_url'] ?? '')) ?>" 
-                   class="form-input" 
-                   placeholder="uploads/blog/image.jpg">
+            <label>Hero Image <span class="required">(optional)</span></label>
+            
+            <!-- Preview Container -->
+            <div id="hero-preview-container" style="margin-bottom:16px;">
+                <?php if (!empty($post['hero_image_url'])): ?>
+                    <img id="hero-preview" 
+                         src="<?= base_url($post['hero_image_url']) ?>" 
+                         style="max-width:400px; max-height:300px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    <p style="color:#64748b; margin-top:8px;">Current image. Upload a new one to replace it.</p>
+                <?php else: ?>
+                    <img id="hero-preview" src="" style="display:none; max-width:400px; max-height:300px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    <p id="no-image-text" style="color:#64748b; font-style:italic;">No image selected</p>
+                <?php endif; ?>
+            </div>
+
+            <!-- File Input -->
+            <input type="file"
+                   name="hero_image_file"
+                   id="hero_image_file"
+                   accept="image/*"
+                   class="form-input">
+
+            <small class="text-muted">Upload a new image (JPG, PNG, GIF, WebP). Max 2MB. Will replace current hero image.</small>
         </div>
 
         <div class="form-group">
             <label>Category</label>
-            <input type="text" 
-                   name="category" 
-                   value="<?= esc(old('category', $post['category'] ?? '')) ?>" 
+            <input type="text"
+                   name="category"
+                   value="<?= esc(old('category', $post['category'] ?? '')) ?>"
                    class="form-input">
         </div>
 
         <div class="form-group">
             <label>Tags (comma separated)</label>
             <?php
-                // Convert JSON array to comma-separated string for editing
                 $existingTags = '';
                 if (!empty($post['tags']) && is_array($post['tags'])) {
                     $existingTags = implode(', ', $post['tags']);
                 }
             ?>
-            <input type="text" 
-                   name="tags" 
-                   value="<?= esc(old('tags', $existingTags)) ?>" 
-                   class="form-input" 
+            <input type="text"
+                   name="tags"
+                   value="<?= esc(old('tags', $existingTags)) ?>"
+                   class="form-input"
                    placeholder="finance, investing, startups">
             <small class="text-muted">Separate tags with commas</small>
         </div>
@@ -151,8 +169,10 @@
 
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Quill Editor
         const quill = new Quill('#editor', {
             theme: 'snow',
             modules: {
@@ -181,6 +201,52 @@
         form.addEventListener('submit', function () {
             document.getElementById('content-hidden').value = quill.root.innerHTML;
         });
+
+        // Hero Image Preview & Validation (Edit Version)
+        const fileInput = document.getElementById('hero_image_file');
+        const preview = document.getElementById('hero-preview');
+        const noImageText = document.getElementById('no-image-text');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+
+            if (!file) {
+                // If cleared, show original or no image text
+                if ("<?= !empty($post['hero_image_url']) ? 'true' : 'false' ?>" === 'true') {
+                    preview.src = "<?= base_url($post['hero_image_url'] ?? '') ?>";
+                    preview.style.display = 'block';
+                    if (noImageText) noImageText.style.display = 'none';
+                } else {
+                    preview.style.display = 'none';
+                    if (noImageText) noImageText.style.display = 'block';
+                }
+                return;
+            }
+
+            // Validate type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Validate size
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image must be less than 2MB.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Preview new image
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                preview.src = event.target.result;
+                preview.style.display = 'block';
+                if (noImageText) noImageText.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
     });
 </script>
+
 <?php $this->endSection() ?>

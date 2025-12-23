@@ -60,7 +60,8 @@
         <div class="alert alert-error">✕ <?= esc(session('error')) ?></div>
     <?php endif; ?>
 
-    <form action="<?= site_url('admin/blogs/store') ?>" method="post" class="admin-form">
+    <!-- IMPORTANT: enctype for file upload -->
+    <form action="<?= site_url('admin/blogs/store') ?>" method="post" class="admin-form" enctype="multipart/form-data">
         <?= csrf_field() ?>
 
         <div class="form-group">
@@ -85,9 +86,24 @@
             <textarea name="content" id="content-hidden" style="display:none;"></textarea>
         </div>
 
+        <!-- HERO IMAGE UPLOAD WITH PREVIEW -->
         <div class="form-group">
-            <label>Hero Image URL</label>
-            <input type="text" name="hero_image" value="<?= esc(old('hero_image')) ?>" class="form-input" placeholder="uploads/blog/my-image.jpg">
+            <label>Hero Image <span class="required">(optional)</span></label>
+            
+            <!-- Preview Container -->
+            <div id="hero-preview-container" style="margin-bottom:16px;">
+                <img id="hero-preview" src="" style="display:none; max-width:400px; max-height:300px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                <p id="no-image-text" style="color:#64748b; font-style:italic;">No image selected</p>
+            </div>
+
+            <!-- File Input -->
+            <input type="file"
+                   name="hero_image_file"
+                   id="hero_image_file"
+                   accept="image/*"
+                   class="form-input">
+
+            <small class="text-muted">Upload a new image (JPG, PNG, GIF, WebP). Max 2MB.</small>
         </div>
 
         <div class="form-group">
@@ -97,10 +113,10 @@
 
         <div class="form-group">
             <label>Tags (comma separated)</label>
-            <input type="text" 
-                   name="tags" 
-                   value="<?= esc(old('tags')) ?>" 
-                   class="form-input" 
+            <input type="text"
+                   name="tags"
+                   value="<?= esc(old('tags')) ?>"
+                   class="form-input"
                    placeholder="php, codeigniter, tutorial">
             <small class="text-muted">Separate tags with commas</small>
         </div>
@@ -129,8 +145,10 @@
 <!-- Quill.js -->
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Quill Editor
         const quill = new Quill('#editor', {
             theme: 'snow',
             modules: {
@@ -148,17 +166,56 @@
             placeholder: 'Start writing your masterpiece...',
         });
 
-        // Restore content from old input if form failed validation
+        // Restore old content if validation failed
         const oldContent = <?= json_encode(old('content') ?? '') ?>;
         if (oldContent && oldContent.trim() !== '') {
             quill.root.innerHTML = oldContent;
         }
 
-        // Sync Quill content to hidden field on submit
+        // Sync Quill to hidden textarea on submit
         const form = document.querySelector('form');
         form.addEventListener('submit', function () {
             document.getElementById('content-hidden').value = quill.root.innerHTML;
         });
+
+        // Hero Image Preview & Validation
+        const fileInput = document.getElementById('hero_image_file');
+        const preview = document.getElementById('hero-preview');
+        const noImageText = document.getElementById('no-image-text');
+
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+
+            if (!file) {
+                preview.style.display = 'none';
+                noImageText.style.display = 'block';
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Validate file size (2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Image must be less than 2MB.');
+                fileInput.value = '';
+                return;
+            }
+
+            // Preview image
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                preview.src = event.target.result;
+                preview.style.display = 'block';
+                noImageText.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
     });
 </script>
+
 <?php $this->endSection() ?>
