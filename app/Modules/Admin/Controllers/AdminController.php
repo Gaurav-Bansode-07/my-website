@@ -4,7 +4,6 @@ namespace App\Modules\Admin\Controllers;
 
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
-use CodeIgniter\Files\File;
 
 class AdminController extends BaseController
 {
@@ -16,9 +15,6 @@ class AdminController extends BaseController
         $this->blogModel = new AdminBlogModel();
     }
 
-    /**
-     * Blog list
-     */
     public function blogs()
     {
         $data['posts'] = $this->blogModel
@@ -28,17 +24,11 @@ class AdminController extends BaseController
         return view('App\Modules\Admin\Views\index', $data);
     }
 
-    /**
-     * Create form
-     */
     public function create()
     {
         return view('App\Modules\Admin\Views\create');
     }
 
-    /**
-     * Store new post
-     */
     public function store()
     {
         $title = trim($this->request->getPost('title') ?? '');
@@ -48,40 +38,45 @@ class AdminController extends BaseController
 
         $isPublished = $this->request->getPost('status') === 'published';
 
-        // TAGS HANDLING
+        // TAGS
         $tagsInput  = $this->request->getPost('tags');
         $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
         $tagsArray  = $tagsString !== '' ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
 
-        // HERO IMAGE UPLOAD
+        // HERO IMAGE UPLOAD — FINAL FIXED VERSION
         $heroImageUrl = null;
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // CORRECT 2MB CHECK (in bytes)
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
 
             $newName = $uploadedFile->getRandomName();
 
-            // Try Spaces first (production)
-            try {
-                $path = $uploadedFile->store('blog/', $newName, 's3');
-                $heroImageUrl = env('AWS_URL') . '/' . $path;
-            } catch (\Exception $e) {
-                // Local fallback (XAMPP)
+            // PRODUCTION: Spaces with public visibility
+            if (env('FILESYSTEM_DRIVER') === 's3' && env('AWS_URL')) {
+                try {
+                    $options = ['visibility' => 'public'];
+                    $path = $uploadedFile->store('blog/', $newName, 's3', $options);
+                    $heroImageUrl = rtrim(env('AWS_URL'), '/') . '/' . ltrim($path, '/');
+                } catch (\Exception $e) {
+                    // fallback below
+                }
+            }
+
+            // LOCAL: Force correct path
+            if (!$heroImageUrl) {
                 $uploadPath = FCPATH . 'uploads/blog/';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
                 $uploadedFile->move($uploadPath, $newName);
-                $heroImageUrl = 'uploads/blog/' . $newName; // Correct local path
+                $heroImageUrl = 'uploads/blog/' . $newName; // GUARANTEED CORRECT
             }
         }
 
@@ -100,31 +95,20 @@ class AdminController extends BaseController
             'font_scale'     => 'normal',
         ];
 
-        try {
-            $this->blogModel->insert($data);
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Database Error: ' . $e->getMessage());
-        }
+        $this->blogModel->insert($data);
 
         return redirect()->to('/admin/blogs')->with('success', 'Post created successfully.');
     }
 
-    /**
-     * Edit form
-     */
     public function edit($id)
     {
         $post = $this->blogModel->find($id);
         if (!$post) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }
-
         return view('App\Modules\Admin\Views\edit', ['post' => $post]);
     }
 
-    /**
-     * Update post
-     */
     public function update($id)
     {
         $post = $this->blogModel->find($id);
@@ -139,41 +123,46 @@ class AdminController extends BaseController
 
         $isPublished = $this->request->getPost('status') === 'published';
 
-        // TAGS HANDLING
+        // TAGS
         $tagsInput  = $this->request->getPost('tags');
         $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
         $tagsArray  = $tagsString !== '' ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
 
-        // HERO IMAGE (keep existing by default)
+        // HERO IMAGE — keep existing
         $heroImageUrl = $post['hero_image_url'];
 
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // CORRECT 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
 
             $newName = $uploadedFile->getRandomName();
 
-            try {
-                // Production: Spaces
-                $path = $uploadedFile->store('blog/', $newName, 's3');
-                $heroImageUrl = env('AWS_URL') . '/' . $path;
-            } catch (\Exception $e) {
-                // Local fallback
+            // PRODUCTION
+            if (env('FILESYSTEM_DRIVER') === 's3' && env('AWS_URL')) {
+                try {
+                    $options = ['visibility' => 'public'];
+                    $path = $uploadedFile->store('blog/', $newName, 's3', $options);
+                    $heroImageUrl = rtrim(env('AWS_URL'), '/') . '/' . ltrim($path, '/');
+                } catch (\Exception $e) {
+                    // fallback
+                }
+            }
+
+            // LOCAL — FORCE CORRECT PATH
+            if (!$heroImageUrl || strpos($heroImageUrl, 'http') !== 0) {
                 $uploadPath = FCPATH . 'uploads/blog/';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
                 $uploadedFile->move($uploadPath, $newName);
-                $heroImageUrl = 'uploads/blog/' . $newName; // Correct local path
+                $heroImageUrl = 'uploads/blog/' . $newName;
             }
         }
 
@@ -197,18 +186,13 @@ class AdminController extends BaseController
         return redirect()->to('/admin/blogs')->with('success', 'Post updated successfully.');
     }
 
-    /**
-     * Delete post
-     */
     public function delete($id)
     {
         $post = $this->blogModel->find($id);
         if (!$post) {
             return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
         }
-
         $this->blogModel->delete($id);
-
         return redirect()->to('/admin/blogs')->with('success', 'Post deleted successfully.');
     }
 }
