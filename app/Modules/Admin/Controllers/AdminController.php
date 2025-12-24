@@ -5,8 +5,7 @@ namespace App\Modules\Admin\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
 use CodeIgniter\Files\File;
-
-// Import the AWS S3 classes directly
+// Import the S3 Client
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
@@ -16,13 +15,16 @@ class AdminController extends BaseController
 
     public function __construct()
     {
-        helper(['url', 'text', 'filesystem']);
+        helper(['url', 'text']);
         $this->blogModel = new AdminBlogModel();
     }
 
     public function blogs()
     {
-        $data['posts'] = $this->blogModel->orderBy('created_at', 'DESC')->findAll();
+        $data['posts'] = $this->blogModel
+            ->orderBy('created_at', 'DESC')
+            ->findAll();
+
         return view('App\Modules\Admin\Views\index', $data);
     }
 
@@ -31,9 +33,6 @@ class AdminController extends BaseController
         return view('App\Modules\Admin\Views\create');
     }
 
-    /**
-     * Store new post
-     */
     public function store()
     {
         $title = trim($this->request->getPost('title') ?? '');
@@ -41,6 +40,14 @@ class AdminController extends BaseController
             return redirect()->back()->withInput()->with('error', 'Title is required.');
         }
 
+        $isPublished = $this->request->getPost('status') === 'published';
+
+        // TAGS HANDLING - Fixed to never be null
+        $tagsInput  = $this->request->getPost('tags');
+        $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
+        $tagsArray  = $tagsString !== '' ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
+
+        // HERO IMAGE UPLOAD
         $heroImageUrl = null;
         $uploadedFile = $this->request->getFile('hero_image_file');
 
@@ -49,11 +56,11 @@ class AdminController extends BaseController
 
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    // Direct S3 Client Initialization
+                    // Use Direct S3 Client to avoid "member function write() on null"
                     $s3 = new S3Client([
                         'version'     => 'latest',
                         'region'      => env('AWS_REGION', 'us-east-1'),
-                        'endpoint'    => env('AWS_ENDPOINT'), // e.g., https://atl1.digitaloceanspaces.com
+                        'endpoint'    => env('AWS_ENDPOINT'),
                         'credentials' => [
                             'key'    => env('AWS_ACCESS_KEY_ID'),
                             'secret' => env('AWS_SECRET_ACCESS_KEY'),
@@ -61,23 +68,19 @@ class AdminController extends BaseController
                         'use_path_style_endpoint' => false,
                     ]);
 
-                    $bucket = env('AWS_BUCKET');
-                    $key    = 'blog/' . $newName;
+                    $key = 'blog/' . $newName;
 
-                    // Direct Upload
                     $s3->putObject([
-                        'Bucket'      => $bucket,
+                        'Bucket'      => env('AWS_BUCKET'),
                         'Key'         => $key,
                         'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
-                        'ACL'         => 'public-read',
+                        'ACL'         => 'public-read', // Makes the URL work
                         'ContentType' => $uploadedFile->getMimeType(),
                     ]);
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
                     $heroImageUrl = $baseUrl . '/' . $key;
-
                 } catch (AwsException $e) {
-                    log_message('error', 'S3 Direct Upload Error: ' . $e->getMessage());
                     return redirect()->back()->withInput()->with('error', 'S3 Error: ' . $e->getAwsErrorMessage());
                 }
             } else {
@@ -91,23 +94,46 @@ class AdminController extends BaseController
         $data = [
             'title'          => $title,
             'slug'           => url_title($title, '-', true),
+            'subtitle'       => $this->request->getPost('subtitle'),
+            'summary'        => $this->request->getPost('summary'),
             'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
-            'is_published'   => $this->request->getPost('status') === 'published' ? 1 : 0,
-            'published_at'   => date('Y-m-d H:i:s'),
+            'category'       => $this->request->getPost('category'),
+            'tags'           => $tagsArray, // Sent as array to prevent Null Exception
+            'is_published'   => $isPublished ? 1 : 0,
+            'published_at'   => $isPublished ? date('Y-m-d H:i:s') : null,
+            'layout_mode'    => 'standard',
+            'font_scale'     => 'normal',
         ];
 
-        $this->blogModel->insert($data);
+        try {
+            $this->blogModel->insert($data);
+        } catch (\Exception $e) {
+            return redirect()->back()->withInput()->with('error', 'Database Error: ' . $e->getMessage());
+        }
+
         return redirect()->to('/admin/blogs')->with('success', 'Post created successfully.');
     }
 
-    /**
-     * Update post
-     */
+    public function edit($id)
+    {
+        $post = $this->blogModel->find($id);
+        if (!$post) return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
+        return view('App\Modules\Admin\Views\edit', ['post' => $post]);
+    }
+
     public function update($id)
     {
         $post = $this->blogModel->find($id);
         if (!$post) return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
+
+        $title = trim($this->request->getPost('title') ?? '');
+        $isPublished = $this->request->getPost('status') === 'published';
+
+        // TAGS HANDLING - Fixed to never be null
+        $tagsInput  = $this->request->getPost('tags');
+        $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
+        $tagsArray  = $tagsString !== '' ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
 
         $heroImageUrl = $post['hero_image_url'];
         $uploadedFile = $this->request->getFile('hero_image_file');
@@ -149,18 +175,26 @@ class AdminController extends BaseController
             }
         }
 
-        $this->blogModel->update($id, [
-            'title'          => $this->request->getPost('title'),
-            'hero_image_url' => $heroImageUrl,
+        $data = [
+            'title'          => $title,
+            'slug'           => url_title($title, '-', true),
+            'subtitle'       => $this->request->getPost('subtitle'),
+            'summary'        => $this->request->getPost('summary'),
             'content_html'   => $this->request->getPost('content'),
-        ]);
+            'hero_image_url' => $heroImageUrl,
+            'category'       => $this->request->getPost('category'),
+            'tags'           => $tagsArray, // Sent as array to prevent Null Exception
+            'is_published'   => $isPublished ? 1 : 0,
+            'published_at'   => $isPublished ? ($post['published_at'] ?? date('Y-m-d H:i:s')) : null,
+        ];
 
+        $this->blogModel->update($id, $data);
         return redirect()->to('/admin/blogs')->with('success', 'Post updated successfully.');
     }
 
     public function delete($id)
     {
         $this->blogModel->delete($id);
-        return redirect()->to('/admin/blogs')->with('success', 'Post deleted.');
+        return redirect()->to('/admin/blogs')->with('success', 'Post deleted successfully.');
     }
 }
