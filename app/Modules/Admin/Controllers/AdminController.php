@@ -58,12 +58,10 @@ class AdminController extends BaseController
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
@@ -73,12 +71,14 @@ class AdminController extends BaseController
             // Production: Upload to S3 (Spaces)
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    // We use 'blog' (no slash) to keep paths clean
+                    // Upload to 'blog' folder
                     $path = $uploadedFile->store('blog', $newName, 's3');
                     
-                    // Clean the Base URL and join with a single slash
+                    // FIX: Ensure no double slashes by ltrimming the path
                     $baseUrl = rtrim(env('AWS_URL'), '/');
-                    $heroImageUrl = $baseUrl . '/' . $path;
+                    $cleanPath = ltrim($path, '/');
+                    
+                    $heroImageUrl = $baseUrl . '/' . $cleanPath;
                 } catch (\Exception $e) {
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
                     return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getMessage());
@@ -172,13 +172,17 @@ class AdminController extends BaseController
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
                     $path = $uploadedFile->store('blog', $newName, 's3');
+                    
                     $baseUrl = rtrim(env('AWS_URL'), '/');
-                    $heroImageUrl = $baseUrl . '/' . $path;
+                    $cleanPath = ltrim($path, '/');
+                    
+                    $heroImageUrl = $baseUrl . '/' . $cleanPath;
                 } catch (\Exception $e) {
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
                     return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getMessage());
                 }
             } else {
+                // Local fallback
                 $uploadPath = FCPATH . 'uploads/blog/';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
