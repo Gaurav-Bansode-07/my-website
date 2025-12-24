@@ -1,8 +1,9 @@
 <?php $this->extend('layouts/main') ?>
 <?php $this->section('title') ?>Edit Post – <?= esc($post['title']) ?><?php $this->endSection() ?>
-
 <?php $this->section('content') ?>
+
 <style>
+    /* Admin Panel Overrides */
     #main-header {
         background: #111827;
         box-shadow: 0 2px 12px rgba(0,0,0,0.2);
@@ -12,6 +13,7 @@
     #main-header .logo { color: #fff; font-weight: 800; font-size: 20px; }
     footer { display: none !important; }
 
+    /* Quill Editor Styling */
     #editor {
         background: white;
         border-radius: 12px;
@@ -41,6 +43,89 @@
         color: #94a3b8;
         font-style: normal;
     }
+
+    /* Mobile Responsiveness for Edit Page */
+    @media (max-width: 767px) {
+        .admin-container {
+            padding: 0 16px;
+            margin: 32px auto 60px;
+        }
+
+        .admin-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .admin-title-group h1 {
+            font-size: 1.8rem;
+        }
+
+        .admin-title-group .admin-subtitle {
+            font-size: 1rem;
+        }
+
+        .btn-create[style*="background:#6b7280"] {
+            align-self: flex-start;
+            padding: 10px 18px !important;
+            font-size: 14px;
+        }
+
+        .admin-form {
+            padding: 24px 20px !important;
+        }
+
+        .form-input {
+            padding: 14px 16px;
+            font-size: 16px !important; /* Prevents iOS zoom */
+        }
+
+        textarea.form-input {
+            min-height: 100px;
+        }
+
+        /* Quill toolbar touch-friendly */
+        .ql-toolbar {
+            padding: 8px 10px !important;
+        }
+        .ql-toolbar button {
+            width: 38px !important;
+            height: 38px !important;
+            margin: 0 2px !important;
+        }
+        .ql-toolbar .ql-formats {
+            margin-right: 8px !important;
+        }
+
+        /* Hero image preview - full width on mobile */
+        #hero-preview-container img#hero-preview {
+            max-width: 100% !important;
+            width: 100%;
+            height: auto;
+            max-height: 280px;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        #hero-preview-container p {
+            font-size: 14px;
+            margin: 8px 0;
+        }
+
+        /* Submit button full width */
+        .btn-create-large {
+            width: 100%;
+            padding: 18px 32px !important;
+            font-size: 16px;
+            justify-content: center;
+        }
+
+        .form-actions {
+            margin-top: 32px;
+        }
+    }
 </style>
 
 <div class="admin-container">
@@ -58,7 +143,6 @@
         <div class="alert alert-error">✕ <?= esc(session('error')) ?></div>
     <?php endif; ?>
 
-    <!-- IMPORTANT: enctype for file upload -->
     <form action="<?= site_url('admin/blogs/update/' . $post['id']) ?>" method="post" class="admin-form" enctype="multipart/form-data">
         <?= csrf_field() ?>
 
@@ -93,28 +177,25 @@
         <!-- HERO IMAGE UPLOAD WITH PREVIEW (EDIT VERSION) -->
         <div class="form-group">
             <label>Hero Image <span class="required">(optional)</span></label>
-            
-            <!-- Preview Container -->
+
             <div id="hero-preview-container" style="margin-bottom:16px;">
                 <?php if (!empty($post['hero_image_url'])): ?>
-                    <img id="hero-preview" 
-                         src="<?= base_url($post['hero_image_url']) ?>" 
-                         style="max-width:400px; max-height:300px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-                    <p style="color:#64748b; margin-top:8px;">Current image. Upload a new one to replace it.</p>
+                    <img id="hero-preview"
+                         src="<?= base_url($post['hero_image_url']) ?>"
+                         style="border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    <p style="color:#64748b; margin-top:8px; font-size:14px;">Current image. Upload a new one to replace it.</p>
                 <?php else: ?>
-                    <img id="hero-preview" src="" style="display:none; max-width:400px; max-height:300px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
-                    <p id="no-image-text" style="color:#64748b; font-style:italic;">No image selected</p>
+                    <img id="hero-preview" src="" style="display:none; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                    <p id="no-image-text" style="color:#64748b; font-style:italic; margin:8px 0; font-size:14px;">No image selected</p>
                 <?php endif; ?>
             </div>
 
-            <!-- File Input -->
             <input type="file"
                    name="hero_image_file"
                    id="hero_image_file"
                    accept="image/*"
                    class="form-input">
-
-            <small class="text-muted">Upload a new image (JPG, PNG, GIF, WebP). Max 2MB. Will replace current hero image.</small>
+            <small class="text-muted">JPG, PNG, GIF, WebP. Max 2MB. Will replace current hero image.</small>
         </div>
 
         <div class="form-group">
@@ -169,10 +250,8 @@
 
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Quill Editor
         const quill = new Quill('#editor', {
             theme: 'snow',
             modules: {
@@ -190,28 +269,22 @@
             placeholder: 'Start writing your masterpiece...',
         });
 
-        // Load existing content (from DB or old input)
         const savedContent = <?= json_encode(old('content', $post['content_html'] ?? '')) ?>;
         if (savedContent && savedContent.trim() !== '') {
             quill.root.innerHTML = savedContent;
         }
 
-        // Sync on submit
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function () {
+        document.querySelector('form').addEventListener('submit', function () {
             document.getElementById('content-hidden').value = quill.root.innerHTML;
         });
 
-        // Hero Image Preview & Validation (Edit Version)
         const fileInput = document.getElementById('hero_image_file');
         const preview = document.getElementById('hero-preview');
         const noImageText = document.getElementById('no-image-text');
 
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
-
             if (!file) {
-                // If cleared, show original or no image text
                 if ("<?= !empty($post['hero_image_url']) ? 'true' : 'false' ?>" === 'true') {
                     preview.src = "<?= base_url($post['hero_image_url'] ?? '') ?>";
                     preview.style.display = 'block';
@@ -223,21 +296,18 @@
                 return;
             }
 
-            // Validate type
             if (!file.type.startsWith('image/')) {
                 alert('Please select a valid image file.');
                 fileInput.value = '';
                 return;
             }
 
-            // Validate size
             if (file.size > 2 * 1024 * 1024) {
                 alert('Image must be less than 2MB.');
                 fileInput.value = '';
                 return;
             }
 
-            // Preview new image
             const reader = new FileReader();
             reader.onload = function(event) {
                 preview.src = event.target.result;
