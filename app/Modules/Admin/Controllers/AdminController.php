@@ -5,6 +5,7 @@ namespace App\Modules\Admin\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
 use CodeIgniter\Files\File;
+use Config\Services;
 
 class AdminController extends BaseController
 {
@@ -12,7 +13,7 @@ class AdminController extends BaseController
 
     public function __construct()
     {
-        helper(['url', 'text']);
+        helper(['url', 'text', 'filesystem']);
         $this->blogModel = new AdminBlogModel();
     }
 
@@ -42,17 +43,21 @@ class AdminController extends BaseController
 
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    // Use the Storage service directly (same as your successful debugger)
-                    $storage = \Config\Services::storage('s3');
+                    // Fix: Use the standard CI4 Filesystem way to get the S3 disk
+                    // This ensures $storage is NOT null
+                    $storage = \Config\Services::filesystem()->getDisk('s3');
                     $targetPath = 'blog/' . $newName;
 
-                    // Upload with explicit PUBLIC visibility and Content-Type
+                    // Upload using the binary content to ensure it's written correctly
                     $storage->write(
                         $targetPath, 
                         file_get_contents($uploadedFile->getTempName()), 
                         [
                             'visibility' => 'public',
-                            'contentType' => $uploadedFile->getMimeType()
+                            'params' => [
+                                'ContentType' => $uploadedFile->getMimeType(),
+                                'ACL'         => 'public-read' // DigitalOcean specific force
+                            ]
                         ]
                     );
 
@@ -60,11 +65,10 @@ class AdminController extends BaseController
                     $heroImageUrl = $baseUrl . '/' . $targetPath;
 
                 } catch (\Exception $e) {
-                    log_message('error', 'S3 Upload Failed: ' . $e->getMessage());
+                    log_message('error', 'S3 Upload Error: ' . $e->getMessage());
                     return redirect()->back()->withInput()->with('error', 'Upload failed: ' . $e->getMessage());
                 }
             } else {
-                // Local Fallback
                 $uploadPath = FCPATH . 'uploads/blog/';
                 if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
                 $uploadedFile->move($uploadPath, $newName);
@@ -88,7 +92,7 @@ class AdminController extends BaseController
         ];
 
         $this->blogModel->insert($data);
-        return redirect()->to('/admin/blogs')->with('success', 'Post created. URL: ' . $heroImageUrl);
+        return redirect()->to('/admin/blogs')->with('success', 'Post created successfully!');
     }
 
     public function edit($id)
@@ -111,13 +115,19 @@ class AdminController extends BaseController
 
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    $storage = \Config\Services::storage('s3');
+                    $storage = \Config\Services::filesystem()->getDisk('s3');
                     $targetPath = 'blog/' . $newName;
 
                     $storage->write(
                         $targetPath, 
                         file_get_contents($uploadedFile->getTempName()), 
-                        ['visibility' => 'public', 'contentType' => $uploadedFile->getMimeType()]
+                        [
+                            'visibility' => 'public',
+                            'params' => [
+                                'ContentType' => $uploadedFile->getMimeType(),
+                                'ACL'         => 'public-read'
+                            ]
+                        ]
                     );
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
