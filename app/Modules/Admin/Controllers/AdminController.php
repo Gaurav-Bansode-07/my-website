@@ -74,7 +74,9 @@ class AdminController extends BaseController
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
                     $options = ['visibility' => 'public'];
-                    $path = $uploadedFile->store('blog/', $newName, 's3', $options);
+					// Remove the 'visibility' option for a moment to see if it's a permission conflict
+					$path = $uploadedFile->store('blog', $newName, 's3');
+                    // $path = $uploadedFile->store('blog/', $newName, 's3', $options);
                     $heroImageUrl = env('AWS_URL') . '/' . $path;
                 } catch (\Exception $e) {
                     // Log error for debugging
