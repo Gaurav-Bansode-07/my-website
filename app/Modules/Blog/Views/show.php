@@ -1,13 +1,9 @@
-<?= $this->extend('layouts/main') ?>
-<?= $this->section('content') ?>
-
+<?php $this->extend('layouts/main') ?>
+<?php $this->section('content') ?>
 <article class="article-wrapper">
-
     <div class="article-hero">
-
         <header class="article-header">
             <div class="article-inner">
-
                 <!-- TITLE -->
                 <h1><?= esc($post['title']) ?></h1>
 
@@ -23,19 +19,19 @@
                         <?= esc($post['subtitle']) ?>
                     </p>
                 <?php endif; ?>
-
             </div>
         </header>
 
-        <!-- HERO IMAGE -->
+        <!-- HERO IMAGE - FIXED FOR LOCAL & LIVE -->
         <?php if (!empty($post['hero_image_url'])): ?>
             <img
-                src="<?= base_url(esc($post['hero_image_url'])) ?>"
+                src="<?= str_starts_with($post['hero_image_url'], 'http') 
+                    ? esc($post['hero_image_url']) 
+                    : base_url(esc($post['hero_image_url'])) ?>"
                 class="article-hero-img"
                 alt="<?= esc($post['title']) ?>"
             >
         <?php endif; ?>
-
     </div>
 
     <!-- ARTICLE CONTENT -->
@@ -44,7 +40,5 @@
             <?= $post['content_html'] ?>
         </div>
     </div>
-
 </article>
-
-<?= $this->endSection() ?>
+<?php $this->endSection() ?>
