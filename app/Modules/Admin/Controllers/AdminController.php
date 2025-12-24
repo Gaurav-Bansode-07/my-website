@@ -5,6 +5,9 @@ namespace App\Modules\Admin\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
 use CodeIgniter\Files\File;
+// Required for the S3 Fix
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
 
 class AdminController extends BaseController
 {
@@ -58,28 +61,44 @@ class AdminController extends BaseController
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // CORRECT 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
 
             $newName = $uploadedFile->getRandomName();
 
-            // Production: Upload to S3 (Spaces)
+            // Production: Upload to S3 (Spaces) - FIXED VERSION
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    $options = ['visibility' => 'public'];
-                    $path = $uploadedFile->store('blog/', $newName, 's3', $options);
-                    $heroImageUrl = env('AWS_URL') . '/' . $path;
-                } catch (\Exception $e) {
-                    // Log error for debugging
+                    $s3 = new S3Client([
+                        'version'     => 'latest',
+                        'region'      => env('AWS_REGION', 'us-east-1'),
+                        'endpoint'    => env('AWS_ENDPOINT'),
+                        'credentials' => [
+                            'key'    => env('AWS_ACCESS_KEY_ID'),
+                            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                        ],
+                        'use_path_style_endpoint' => false,
+                    ]);
+
+                    $key = 'blog/' . $newName;
+
+                    $s3->putObject([
+                        'Bucket'      => env('AWS_BUCKET'),
+                        'Key'         => $key,
+                        'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
+                        'ACL'         => 'public-read', // Ensures link works
+                        'ContentType' => $uploadedFile->getMimeType(),
+                    ]);
+
+                    $heroImageUrl = rtrim(env('AWS_URL'), '/') . '/' . $key;
+                } catch (AwsException $e) {
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
-                    return redirect()->back()->withInput()->with('error', 'Image upload failed. Please try again.');
+                    return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getAwsErrorMessage());
                 }
             } else {
                 // Local fallback
@@ -100,7 +119,7 @@ class AdminController extends BaseController
             'content_html' => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
             'category' => $this->request->getPost('category'),
-            'tags' => $tagsArray,
+            'tags' => !empty($tagsArray) ? $tagsArray : [],
             'is_published' => $isPublished ? 1 : 0,
             'published_at' => $isPublished ? date('Y-m-d H:i:s') : null,
             'layout_mode' => 'standard',
@@ -153,31 +172,46 @@ class AdminController extends BaseController
 
         // HERO IMAGE (keep existing)
         $heroImageUrl = $post['hero_image_url'];
-
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // CORRECT 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
 
             $newName = $uploadedFile->getRandomName();
 
-            // Production: S3
+            // Production: S3 - FIXED VERSION
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    $options = ['visibility' => 'public'];
-                    $path = $uploadedFile->store('blog/', $newName, 's3', $options);
-                    $heroImageUrl = env('AWS_URL') . '/' . $path;
-                } catch (\Exception $e) {
-                    log_message('error', 'S3 upload failed: ' . $e->getMessage());
-                    return redirect()->back()->withInput()->with('error', 'Image upload failed. Please try again.');
+                    $s3 = new S3Client([
+                        'version'     => 'latest',
+                        'region'      => env('AWS_REGION', 'us-east-1'),
+                        'endpoint'    => env('AWS_ENDPOINT'),
+                        'credentials' => [
+                            'key'    => env('AWS_ACCESS_KEY_ID'),
+                            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                        ],
+                    ]);
+
+                    $key = 'blog/' . $newName;
+
+                    $s3->putObject([
+                        'Bucket'      => env('AWS_BUCKET'),
+                        'Key'         => $key,
+                        'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
+                        'ACL'         => 'public-read',
+                        'ContentType' => $uploadedFile->getMimeType(),
+                    ]);
+
+                    $heroImageUrl = rtrim(env('AWS_URL'), '/') . '/' . $key;
+                } catch (AwsException $e) {
+                    log_message('error', 'S3 update failed: ' . $e->getMessage());
+                    return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getAwsErrorMessage());
                 }
             } else {
                 // Local fallback
@@ -198,7 +232,7 @@ class AdminController extends BaseController
             'content_html' => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
             'category' => $this->request->getPost('category'),
-            'tags' => $tagsArray,
+            'tags' => !empty($tagsArray) ? $tagsArray : [],
             'is_published' => $isPublished ? 1 : 0,
             'published_at' => $isPublished ? ($post['published_at'] ?? date('Y-m-d H:i:s')) : null,
             'layout_mode' => $post['layout_mode'] ?? 'standard',
