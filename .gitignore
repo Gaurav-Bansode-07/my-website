@@ -23,3 +23,5 @@
 !.env.example
 "Test-NetConnection" 
 "ping" 
+
+git clean -f public/uploads/blog/

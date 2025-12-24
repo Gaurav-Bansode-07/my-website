@@ -63,7 +63,7 @@ class AdminController extends BaseController
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // CORRECT 2MB CHECK
+            // 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
@@ -73,15 +73,15 @@ class AdminController extends BaseController
             // Production: Upload to S3 (Spaces)
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    $options = ['visibility' => 'public'];
-					// Remove the 'visibility' option for a moment to see if it's a permission conflict
-					$path = $uploadedFile->store('blog', $newName, 's3');
-                    // $path = $uploadedFile->store('blog/', $newName, 's3', $options);
-                    $heroImageUrl = env('AWS_URL') . '/' . $path;
+                    // We use 'blog' (no slash) to keep paths clean
+                    $path = $uploadedFile->store('blog', $newName, 's3');
+                    
+                    // Clean the Base URL and join with a single slash
+                    $baseUrl = rtrim(env('AWS_URL'), '/');
+                    $heroImageUrl = $baseUrl . '/' . $path;
                 } catch (\Exception $e) {
-                    // Log error for debugging
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
-                    return redirect()->back()->withInput()->with('error', 'Image upload failed. Please try again.');
+                    return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getMessage());
                 }
             } else {
                 // Local fallback
@@ -95,18 +95,18 @@ class AdminController extends BaseController
         }
 
         $data = [
-            'title' => $title,
-            'slug' => url_title($title, '-', true),
-            'subtitle' => $this->request->getPost('subtitle'),
-            'summary' => $this->request->getPost('summary'),
-            'content_html' => $this->request->getPost('content'),
+            'title'          => $title,
+            'slug'           => url_title($title, '-', true),
+            'subtitle'       => $this->request->getPost('subtitle'),
+            'summary'        => $this->request->getPost('summary'),
+            'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
-            'category' => $this->request->getPost('category'),
-            'tags' => $tagsArray,
-            'is_published' => $isPublished ? 1 : 0,
-            'published_at' => $isPublished ? date('Y-m-d H:i:s') : null,
-            'layout_mode' => 'standard',
-            'font_scale' => 'normal',
+            'category'       => $this->request->getPost('category'),
+            'tags'           => $tagsArray,
+            'is_published'   => $isPublished ? 1 : 0,
+            'published_at'   => $isPublished ? date('Y-m-d H:i:s') : null,
+            'layout_mode'    => 'standard',
+            'font_scale'     => 'normal',
         ];
 
         try {
@@ -155,16 +155,13 @@ class AdminController extends BaseController
 
         // HERO IMAGE (keep existing)
         $heroImageUrl = $post['hero_image_url'];
-
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
-            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
-            // CORRECT 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
@@ -174,15 +171,14 @@ class AdminController extends BaseController
             // Production: S3
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    $options = ['visibility' => 'public'];
-                    $path = $uploadedFile->store('blog/', $newName, 's3', $options);
-                    $heroImageUrl = env('AWS_URL') . '/' . $path;
+                    $path = $uploadedFile->store('blog', $newName, 's3');
+                    $baseUrl = rtrim(env('AWS_URL'), '/');
+                    $heroImageUrl = $baseUrl . '/' . $path;
                 } catch (\Exception $e) {
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
-                    return redirect()->back()->withInput()->with('error', 'Image upload failed. Please try again.');
+                    return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getMessage());
                 }
             } else {
-                // Local fallback
                 $uploadPath = FCPATH . 'uploads/blog/';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
@@ -193,18 +189,18 @@ class AdminController extends BaseController
         }
 
         $data = [
-            'title' => $title,
-            'slug' => url_title($title, '-', true),
-            'subtitle' => $this->request->getPost('subtitle'),
-            'summary' => $this->request->getPost('summary'),
-            'content_html' => $this->request->getPost('content'),
+            'title'          => $title,
+            'slug'           => url_title($title, '-', true),
+            'subtitle'       => $this->request->getPost('subtitle'),
+            'summary'        => $this->request->getPost('summary'),
+            'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
-            'category' => $this->request->getPost('category'),
-            'tags' => $tagsArray,
-            'is_published' => $isPublished ? 1 : 0,
-            'published_at' => $isPublished ? ($post['published_at'] ?? date('Y-m-d H:i:s')) : null,
-            'layout_mode' => $post['layout_mode'] ?? 'standard',
-            'font_scale' => $post['font_scale'] ?? 'normal',
+            'category'       => $this->request->getPost('category'),
+            'tags'           => $tagsArray,
+            'is_published'   => $isPublished ? 1 : 0,
+            'published_at'   => $isPublished ? ($post['published_at'] ?? date('Y-m-d H:i:s')) : null,
+            'layout_mode'    => $post['layout_mode'] ?? 'standard',
+            'font_scale'     => $post['font_scale'] ?? 'normal',
         ];
 
         $this->blogModel->update($id, $data);
