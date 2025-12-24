@@ -5,6 +5,7 @@ namespace App\Modules\Admin\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
 use CodeIgniter\Files\File;
+// Import S3 Client for the fix
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
@@ -60,10 +61,12 @@ class AdminController extends BaseController
         $uploadedFile = $this->request->getFile('hero_image_file');
 
         if ($uploadedFile && $uploadedFile->isValid() && !$uploadedFile->hasMoved()) {
+            // Validate type
             if (!str_starts_with($uploadedFile->getMimeType(), 'image/')) {
                 return redirect()->back()->withInput()->with('error', 'Only image files are allowed.');
             }
 
+            // 2MB CHECK
             if ($uploadedFile->getSize() > 2 * 1024 * 1024) {
                 return redirect()->back()->withInput()->with('error', 'Image must be less than 2MB.');
             }
@@ -73,6 +76,7 @@ class AdminController extends BaseController
             // Production: Upload to S3 (Spaces)
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
+                    // --- S3 FIX START ---
                     $s3 = new S3Client([
                         'version'     => 'latest',
                         'region'      => env('AWS_REGION', 'us-east-1'),
@@ -90,12 +94,13 @@ class AdminController extends BaseController
                         'Bucket'      => env('AWS_BUCKET'),
                         'Key'         => $key,
                         'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
-                        'ACL'         => 'public-read', // Ensures the URL is working/accessible
+                        'ACL'         => 'public-read', // Forces public access
                         'ContentType' => $uploadedFile->getMimeType(),
                     ]);
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
                     $heroImageUrl = $baseUrl . '/' . $key;
+                    // --- S3 FIX END ---
                 } catch (AwsException $e) {
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
                     return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getAwsErrorMessage());
@@ -188,6 +193,7 @@ class AdminController extends BaseController
             // Production: S3
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
+                    // --- S3 FIX START ---
                     $s3 = new S3Client([
                         'version'     => 'latest',
                         'region'      => env('AWS_REGION', 'us-east-1'),
@@ -196,7 +202,6 @@ class AdminController extends BaseController
                             'key'    => env('AWS_ACCESS_KEY_ID'),
                             'secret' => env('AWS_SECRET_ACCESS_KEY'),
                         ],
-                        'use_path_style_endpoint' => false,
                     ]);
 
                     $key = 'blog/' . $newName;
@@ -211,12 +216,12 @@ class AdminController extends BaseController
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
                     $heroImageUrl = $baseUrl . '/' . $key;
+                    // --- S3 FIX END ---
                 } catch (AwsException $e) {
                     log_message('error', 'S3 upload failed: ' . $e->getMessage());
                     return redirect()->back()->withInput()->with('error', 'Image upload failed: ' . $e->getAwsErrorMessage());
                 }
             } else {
-                // Local fallback
                 $uploadPath = FCPATH . 'uploads/blog/';
                 if (!is_dir($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
