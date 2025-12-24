@@ -1,17 +1,18 @@
 <?php
 require_once '../vendor/autoload.php';
 use Aws\S3\S3Client;
-use Aws\Exception\AwsException;
 
-// 1. Setup - Pulling directly from your current ENV settings
 $config = [
-    'key'      => 'DO00LZ6Y84H63UYP2T2X', 
-    'secret'   => 'RWK6UZMxf+4WaBqd6/DH+y3j8nGRICILetA9EVyFbsE',
+    'key'      => 'DO00DANKEJDP2KBBQEN4', 
+    'secret'   => 'u13UEtS9/TFMZ7aB7R87N/SnnPL998yZIgaWNQDS9yQ',
     'region'   => 'atl1',
     'bucket'   => 'principacore-bucket-for-storing-all-the-files-uploaded',
     'endpoint' => 'https://atl1.digitaloceanspaces.com',
+    // FIXED URL (No space in "uploaded")
     'url_base' => 'https://principacore-bucket-for-storing-all-the-files-uploaded.atl1.digitaloceanspaces.com'
 ];
+
+// ... (keep the rest of the Master Debugger code I sent you previously)
 
 echo "<h1>Master S3 Debugger</h1>";
 
