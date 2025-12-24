@@ -5,7 +5,7 @@ namespace App\Modules\Admin\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
 use CodeIgniter\Files\File;
-// Import the S3 Client
+// Direct S3 Client usage to bypass Service locator issues
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
 
@@ -42,10 +42,11 @@ class AdminController extends BaseController
 
         $isPublished = $this->request->getPost('status') === 'published';
 
-        // TAGS HANDLING - Fixed to never be null
+        // --- TAGS AS ARRAY (FIXED TO NEVER BE NULL) ---
         $tagsInput  = $this->request->getPost('tags');
         $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
-        $tagsArray  = $tagsString !== '' ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
+        // If string is empty, we provide an empty array [] instead of null
+        $tagsArray  = ($tagsString !== '') ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
 
         // HERO IMAGE UPLOAD
         $heroImageUrl = null;
@@ -56,7 +57,6 @@ class AdminController extends BaseController
 
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    // Use Direct S3 Client to avoid "member function write() on null"
                     $s3 = new S3Client([
                         'version'     => 'latest',
                         'region'      => env('AWS_REGION', 'us-east-1'),
@@ -74,14 +74,14 @@ class AdminController extends BaseController
                         'Bucket'      => env('AWS_BUCKET'),
                         'Key'         => $key,
                         'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
-                        'ACL'         => 'public-read', // Makes the URL work
+                        'ACL'         => 'public-read', // Forces file to be public
                         'ContentType' => $uploadedFile->getMimeType(),
                     ]);
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
                     $heroImageUrl = $baseUrl . '/' . $key;
                 } catch (AwsException $e) {
-                    return redirect()->back()->withInput()->with('error', 'S3 Error: ' . $e->getAwsErrorMessage());
+                    return redirect()->back()->withInput()->with('error', 'Upload Error: ' . $e->getAwsErrorMessage());
                 }
             } else {
                 $uploadPath = FCPATH . 'uploads/blog/';
@@ -99,7 +99,7 @@ class AdminController extends BaseController
             'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
             'category'       => $this->request->getPost('category'),
-            'tags'           => $tagsArray, // Sent as array to prevent Null Exception
+            'tags'           => $tagsArray, // Sent as array to satisfy non-nullable DB
             'is_published'   => $isPublished ? 1 : 0,
             'published_at'   => $isPublished ? date('Y-m-d H:i:s') : null,
             'layout_mode'    => 'standard',
@@ -115,25 +115,14 @@ class AdminController extends BaseController
         return redirect()->to('/admin/blogs')->with('success', 'Post created successfully.');
     }
 
-    public function edit($id)
-    {
-        $post = $this->blogModel->find($id);
-        if (!$post) return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
-        return view('App\Modules\Admin\Views\edit', ['post' => $post]);
-    }
-
     public function update($id)
     {
         $post = $this->blogModel->find($id);
         if (!$post) return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
 
-        $title = trim($this->request->getPost('title') ?? '');
-        $isPublished = $this->request->getPost('status') === 'published';
-
-        // TAGS HANDLING - Fixed to never be null
         $tagsInput  = $this->request->getPost('tags');
         $tagsString = is_string($tagsInput) ? trim($tagsInput) : '';
-        $tagsArray  = $tagsString !== '' ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
+        $tagsArray  = ($tagsString !== '') ? array_filter(array_map('trim', explode(',', $tagsString))) : [];
 
         $heroImageUrl = $post['hero_image_url'];
         $uploadedFile = $this->request->getFile('hero_image_file');
@@ -165,7 +154,7 @@ class AdminController extends BaseController
                     $baseUrl = rtrim(env('AWS_URL'), '/');
                     $heroImageUrl = $baseUrl . '/' . $key;
                 } catch (AwsException $e) {
-                    return redirect()->back()->withInput()->with('error', 'S3 Update Error: ' . $e->getAwsErrorMessage());
+                    return redirect()->back()->withInput()->with('error', 'Update failed: ' . $e->getAwsErrorMessage());
                 }
             } else {
                 $uploadPath = FCPATH . 'uploads/blog/';
@@ -175,26 +164,20 @@ class AdminController extends BaseController
             }
         }
 
-        $data = [
-            'title'          => $title,
-            'slug'           => url_title($title, '-', true),
-            'subtitle'       => $this->request->getPost('subtitle'),
-            'summary'        => $this->request->getPost('summary'),
-            'content_html'   => $this->request->getPost('content'),
+        $this->blogModel->update($id, [
+            'title'          => $this->request->getPost('title'),
             'hero_image_url' => $heroImageUrl,
-            'category'       => $this->request->getPost('category'),
-            'tags'           => $tagsArray, // Sent as array to prevent Null Exception
-            'is_published'   => $isPublished ? 1 : 0,
-            'published_at'   => $isPublished ? ($post['published_at'] ?? date('Y-m-d H:i:s')) : null,
-        ];
+            'content_html'   => $this->request->getPost('content'),
+            'tags'           => $tagsArray,
+            'is_published'   => $this->request->getPost('status') === 'published' ? 1 : 0,
+        ]);
 
-        $this->blogModel->update($id, $data);
-        return redirect()->to('/admin/blogs')->with('success', 'Post updated successfully.');
+        return redirect()->to('/admin/blogs')->with('success', 'Post updated.');
     }
 
     public function delete($id)
     {
         $this->blogModel->delete($id);
-        return redirect()->to('/admin/blogs')->with('success', 'Post deleted successfully.');
+        return redirect()->to('/admin/blogs')->with('success', 'Post deleted.');
     }
 }
