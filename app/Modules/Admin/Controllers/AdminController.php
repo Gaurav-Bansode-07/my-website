@@ -5,7 +5,10 @@ namespace App\Modules\Admin\Controllers;
 use App\Controllers\BaseController;
 use App\Modules\Admin\Models\AdminBlogModel;
 use CodeIgniter\Files\File;
-use Config\Services;
+
+// Import the AWS S3 classes directly
+use Aws\S3\S3Client;
+use Aws\Exception\AwsException;
 
 class AdminController extends BaseController
 {
@@ -28,6 +31,9 @@ class AdminController extends BaseController
         return view('App\Modules\Admin\Views\create');
     }
 
+    /**
+     * Store new post
+     */
     public function store()
     {
         $title = trim($this->request->getPost('title') ?? '');
@@ -43,30 +49,36 @@ class AdminController extends BaseController
 
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    // Fix: Use the standard CI4 Filesystem way to get the S3 disk
-                    // This ensures $storage is NOT null
-                    $storage = \Config\Services::filesystem()->getDisk('s3');
-                    $targetPath = 'blog/' . $newName;
+                    // Direct S3 Client Initialization
+                    $s3 = new S3Client([
+                        'version'     => 'latest',
+                        'region'      => env('AWS_REGION', 'us-east-1'),
+                        'endpoint'    => env('AWS_ENDPOINT'), // e.g., https://atl1.digitaloceanspaces.com
+                        'credentials' => [
+                            'key'    => env('AWS_ACCESS_KEY_ID'),
+                            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                        ],
+                        'use_path_style_endpoint' => false,
+                    ]);
 
-                    // Upload using the binary content to ensure it's written correctly
-                    $storage->write(
-                        $targetPath, 
-                        file_get_contents($uploadedFile->getTempName()), 
-                        [
-                            'visibility' => 'public',
-                            'params' => [
-                                'ContentType' => $uploadedFile->getMimeType(),
-                                'ACL'         => 'public-read' // DigitalOcean specific force
-                            ]
-                        ]
-                    );
+                    $bucket = env('AWS_BUCKET');
+                    $key    = 'blog/' . $newName;
+
+                    // Direct Upload
+                    $s3->putObject([
+                        'Bucket'      => $bucket,
+                        'Key'         => $key,
+                        'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
+                        'ACL'         => 'public-read',
+                        'ContentType' => $uploadedFile->getMimeType(),
+                    ]);
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
-                    $heroImageUrl = $baseUrl . '/' . $targetPath;
+                    $heroImageUrl = $baseUrl . '/' . $key;
 
-                } catch (\Exception $e) {
-                    log_message('error', 'S3 Upload Error: ' . $e->getMessage());
-                    return redirect()->back()->withInput()->with('error', 'Upload failed: ' . $e->getMessage());
+                } catch (AwsException $e) {
+                    log_message('error', 'S3 Direct Upload Error: ' . $e->getMessage());
+                    return redirect()->back()->withInput()->with('error', 'S3 Error: ' . $e->getAwsErrorMessage());
                 }
             } else {
                 $uploadPath = FCPATH . 'uploads/blog/';
@@ -79,29 +91,19 @@ class AdminController extends BaseController
         $data = [
             'title'          => $title,
             'slug'           => url_title($title, '-', true),
-            'subtitle'       => $this->request->getPost('subtitle'),
-            'summary'        => $this->request->getPost('summary'),
             'content_html'   => $this->request->getPost('content'),
             'hero_image_url' => $heroImageUrl,
-            'category'       => $this->request->getPost('category'),
-            'tags'           => is_string($this->request->getPost('tags')) ? array_filter(array_map('trim', explode(',', $this->request->getPost('tags')))) : [],
             'is_published'   => $this->request->getPost('status') === 'published' ? 1 : 0,
-            'published_at'   => $this->request->getPost('status') === 'published' ? date('Y-m-d H:i:s') : null,
-            'layout_mode'    => 'standard',
-            'font_scale'     => 'normal',
+            'published_at'   => date('Y-m-d H:i:s'),
         ];
 
         $this->blogModel->insert($data);
-        return redirect()->to('/admin/blogs')->with('success', 'Post created successfully!');
+        return redirect()->to('/admin/blogs')->with('success', 'Post created successfully.');
     }
 
-    public function edit($id)
-    {
-        $post = $this->blogModel->find($id);
-        if (!$post) return redirect()->to('/admin/blogs')->with('error', 'Post not found.');
-        return view('App\Modules\Admin\Views\edit', ['post' => $post]);
-    }
-
+    /**
+     * Update post
+     */
     public function update($id)
     {
         $post = $this->blogModel->find($id);
@@ -115,25 +117,29 @@ class AdminController extends BaseController
 
             if (env('FILESYSTEM_DRIVER') === 's3') {
                 try {
-                    $storage = \Config\Services::filesystem()->getDisk('s3');
-                    $targetPath = 'blog/' . $newName;
+                    $s3 = new S3Client([
+                        'version'     => 'latest',
+                        'region'      => env('AWS_REGION', 'us-east-1'),
+                        'endpoint'    => env('AWS_ENDPOINT'),
+                        'credentials' => [
+                            'key'    => env('AWS_ACCESS_KEY_ID'),
+                            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                        ],
+                    ]);
 
-                    $storage->write(
-                        $targetPath, 
-                        file_get_contents($uploadedFile->getTempName()), 
-                        [
-                            'visibility' => 'public',
-                            'params' => [
-                                'ContentType' => $uploadedFile->getMimeType(),
-                                'ACL'         => 'public-read'
-                            ]
-                        ]
-                    );
+                    $key = 'blog/' . $newName;
+                    $s3->putObject([
+                        'Bucket'      => env('AWS_BUCKET'),
+                        'Key'         => $key,
+                        'Body'        => fopen($uploadedFile->getTempName(), 'rb'),
+                        'ACL'         => 'public-read',
+                        'ContentType' => $uploadedFile->getMimeType(),
+                    ]);
 
                     $baseUrl = rtrim(env('AWS_URL'), '/');
-                    $heroImageUrl = $baseUrl . '/' . $targetPath;
-                } catch (\Exception $e) {
-                    return redirect()->back()->withInput()->with('error', 'Update failed: ' . $e->getMessage());
+                    $heroImageUrl = $baseUrl . '/' . $key;
+                } catch (AwsException $e) {
+                    return redirect()->back()->withInput()->with('error', 'S3 Update Error: ' . $e->getAwsErrorMessage());
                 }
             } else {
                 $uploadPath = FCPATH . 'uploads/blog/';
@@ -147,10 +153,9 @@ class AdminController extends BaseController
             'title'          => $this->request->getPost('title'),
             'hero_image_url' => $heroImageUrl,
             'content_html'   => $this->request->getPost('content'),
-            'is_published'   => $this->request->getPost('status') === 'published' ? 1 : 0,
         ]);
 
-        return redirect()->to('/admin/blogs')->with('success', 'Post updated.');
+        return redirect()->to('/admin/blogs')->with('success', 'Post updated successfully.');
     }
 
     public function delete($id)
