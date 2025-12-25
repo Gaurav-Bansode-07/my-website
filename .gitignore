@@ -24,4 +24,6 @@
 "Test-NetConnection" 
 "ping" 
 
-git clean -f public/uploads/blog/
+
+
+public/uploads/
