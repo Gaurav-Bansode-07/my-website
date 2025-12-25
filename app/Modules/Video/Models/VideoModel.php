@@ -6,12 +6,12 @@ use CodeIgniter\Model;
 
 class VideoModel extends Model
 {
-    protected $table         = 'video_posts';
-    protected $primaryKey    = 'id';
-    protected $returnType    = 'array';
-    protected $useTimestamps = true;
-    protected $createdField  = 'created_at';
-    protected $updatedField  = 'updated_at';
+    protected $table            = 'video_posts';
+    protected $primaryKey       = 'id';
+    protected $returnType       = 'array';
+    protected $useTimestamps    = true;
+    protected $createdField     = 'created_at';
+    protected $updatedField     = 'updated_at';
 
     protected $allowedFields = [
         'slug',

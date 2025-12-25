@@ -20,8 +20,8 @@
         <nav>
             <a href="<?= site_url('/') ?>">Home</a>
             <a href="<?= site_url('blog') ?>">Blogs</a>
-            <a href="#">Economy</a>
-            <a href="#">Technology</a>
+            <a href="videos">Videos</a>
+            <a href="login">Login</a>
         </nav>
 
     </div>

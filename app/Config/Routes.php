@@ -34,6 +34,7 @@ $modules = [
     'Home',
     'Blog',
     'Admin', // ✅ ADD THIS
+	'Video',
 ];
 
 
