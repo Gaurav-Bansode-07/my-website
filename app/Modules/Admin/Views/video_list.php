@@ -1,21 +1,26 @@
 <?php $this->extend('layouts/main') ?>
 <?php $this->section('title') ?>Manage Videos<?php $this->endSection() ?>
 <?php $this->section('content') ?>
-
 <!-- Hide header/footer in admin -->
 <style>
     #main-header, footer { display: none !important; }
 </style>
-
 <div class="admin-container">
     <div class="admin-header">
         <div class="admin-title-group">
             <h1>Manage Video Posts</h1>
             <p class="admin-subtitle">External videos (YouTube, Vimeo, etc.)</p>
         </div>
-        <a href="<?= site_url('admin/videos/create') ?>" class="btn-create-large">
-            + Add New Video
-        </a>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <!-- Existing Add New Video button -->
+            <a href="<?= site_url('admin/videos/create') ?>" class="btn-create-large">
+                + Add New Video
+            </a>
+            <!-- New: Add New Blog Post button -->
+            <a href="<?= site_url('admin/blogs/create') ?>" class="btn-create-large" style="background:#6b7280;">
+                + Add New Blog Post
+            </a>
+        </div>
     </div>
 
     <a href="<?= site_url('admin/blogs') ?>" style="color:#64748b; margin-bottom:24px; display:inline-block; font-size:15px;">
@@ -68,9 +73,9 @@
                                 <a href="<?= site_url('admin/videos/edit/' . $video['id']) ?>" class="btn-create" style="padding:8px 16px; font-size:13px;">
                                     Edit
                                 </a>
-                                <a href="<?= site_url('admin/videos/delete/' . $video['id']) ?>" 
-                                   class="btn-create" 
-                                   style="background:#ef4444; padding:8px 16px; font-size:13px;" 
+                                <a href="<?= site_url('admin/videos/delete/' . $video['id']) ?>"
+                                   class="btn-create"
+                                   style="background:#ef4444; padding:8px 16px; font-size:13px;"
                                    onclick="return confirm('Delete this video permanently?')">
                                     Delete
                                 </a>
@@ -82,5 +87,4 @@
         </div>
     <?php endif; ?>
 </div>
-
 <?php $this->endSection() ?>
