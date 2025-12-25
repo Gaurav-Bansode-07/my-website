@@ -353,7 +353,7 @@ public function videoStore()
         'external_url' => $externalUrl,
         'hero_image_url' => $heroImageUrl,
         'category'     => $this->request->getPost('category'),
-        'tags'         => $tagsArray,
+        'tags'           => $tagsString, // ✅ FIXED
         'is_published' => $isPublished ? 1 : 0,
         'published_at' => $isPublished ? date('Y-m-d H:i:s') : null,
     ];
@@ -455,7 +455,7 @@ public function videoUpdate($id)
         'external_url'  => $externalUrl,
         'hero_image_url'=> $heroImageUrl,
         'category'      => $this->request->getPost('category'),
-        'tags'          => $tagsArray,
+        'tags'           => $tagsString, // ✅ FIXED
         'is_published'  => $isPublished ? 1 : 0,
         'published_at'  => $isPublished ? ($video['published_at'] ?? date('Y-m-d H:i:s')) : null,
     ];
